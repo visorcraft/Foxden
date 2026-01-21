@@ -27,5 +27,7 @@ All workspace configurations, tab groupings, and user preferences remain on your
 | `tabGroups` | Manage tab groups |
 | `storage` | Save workspace data locally |
 | `menus` | Right-click context menu |
+| `cookies` | Session management for workspace restoration |
+| `downloads` | Export workspaces to JSON file |
 
-All permissions are used solely for local workspace management functionality.
+All permissions are used solely for local workspace management functionality. No data is ever transmitted externally.

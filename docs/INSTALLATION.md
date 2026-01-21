@@ -4,7 +4,7 @@
 
 A pre-signed extension is included in this repository for direct installation:
 
-1. Download [`workspaces-x.x.x.xpi`](https://github.com/visorcraft/Foxden/releases) from this repo's release page
+1. Download [`Foxden-x.x.x.xpi`](https://github.com/visorcraft/Foxden/releases) from this repo's release page
 2. In Firefox, go to `about:addons`
 3. Click the gear icon -> **"Install Add-on From File..."**
 4. Select the downloaded `.xpi` file

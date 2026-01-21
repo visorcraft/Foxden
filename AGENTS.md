@@ -6,7 +6,7 @@ This file provides guidance to AI assistants (Claude, Gemini, etc.) when working
 
 Firefox Workspaces is a browser extension that groups tabs into workspaces, allowing users to switch between workspaces (hiding/showing tabs). Built with pure JavaScript using the WebExtensions API.
 
-**Requirements:** Firefox 139.0+ (uses tabGroups API)
+**Requirements:** Firefox 147+ (uses tabGroups API)
 
 ## Build Commands
 
