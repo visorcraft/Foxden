@@ -1,0 +1,1135 @@
+/* ============================= */
+/* 1. CSS-Variablen (Theme-Farben)
+/* ============================= */
+:root {
+    /* Toolbar / Hintergrund */
+    --bg-toolbar: #fefefe; /* Fallback hell */
+    --bg-toolbar-inactive: #ebebeb;
+    /* Textfarben */
+    --text-toolbar: #000000;
+    --text-sidebar: #000000;
+    /* Popup / Panels */
+    --bg-popup: #ffffff;
+    --border-popup: rgba(0, 0, 0, 0.1);
+    --highlight-popup: #e0e0e0;
+    --text-popup: #000000;
+    /* Buttons */
+    --button-bg: rgba(0, 0, 0, 0.1);
+    --button-hover: rgba(0, 0, 0, 0.2);
+    --button-active: rgba(0, 0, 0, 0.3);
+    --button-primary: #0060df;
+    --button-primary-hover: #1e78ff;
+    --button-primary-active: #559cff;
+    --button-primary-text: #ffffff;
+    /* Inputs */
+    --input-bg: #ffffff;
+    --input-text: #000000;
+    /* System font */
+    --ui-font: menu;
+}
+
+/* ============================= */
+/* 2. Base-Reset
+/* ============================= */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-size: inherit;
+}
+
+html {
+    font-size: 12px;
+    background-color: var(--bg-popup);
+}
+
+html,
+body {
+    height: 100%;
+}
+
+@media (min-resolution: 1dppx) {
+    html {
+        font-size: 14px;
+    }
+}
+
+body {
+    font-family: Roboto, Noto, "San Francisco", Ubuntu, "Segoe UI", "Fira Sans", var(--ui-font), Arial, sans-serif;
+    min-inline-size: 250px;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    background-color: var(--bg-toolbar);
+    color: var(--text-toolbar);
+}
+
+/* ============================= */
+/* Focus styles (accessibility)
+/* ============================= */
+
+:where(a, button, input, select, textarea, [tabindex], [role="button"]):focus-visible {
+    outline: 2px solid var(--button-primary);
+    outline-offset: 2px;
+}
+
+/* ============================= */
+/* 3. Container & Titel
+/* ============================= */
+.container {
+    border-radius: 0;
+    background-color: var(--bg-popup);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ============================= */
+/* Search Input
+/* ============================= */
+.search-container {
+    padding: 10px;
+    background-color: var(--bg-toolbar);
+    border-bottom: 1px solid var(--border-popup);
+}
+
+.tab-search-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-popup);
+    border-radius: 4px;
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    font-size: 0.9em;
+    box-sizing: border-box;
+}
+
+.tab-search-input:focus {
+    outline: none;
+    border-color: var(--button-primary);
+}
+
+.tab-search-input:focus-visible {
+    outline: 2px solid var(--button-primary);
+    outline-offset: 1px;
+}
+
+.tab-search-input::placeholder {
+    color: var(--text-popup);
+    opacity: 0.5;
+}
+
+/* ============================= */
+/* Search Results
+/* ============================= */
+.search-results {
+    list-style: none;
+    background: var(--bg-popup);
+    padding: 0 0 15px 0;
+    margin: 0;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.search-results[hidden] {
+    display: none;
+}
+
+.search-results mark {
+    background: var(--highlight-popup);
+    color: inherit;
+    padding: 0 1px;
+    border-radius: 2px;
+}
+
+.search-result-item {
+    background-color: var(--button-bg);
+    margin: 10px 10px 0 10px;
+    padding: 8px 11px;
+    border-radius: 4px;
+    transition: all .2s ease-out;
+    font-size: .8em;
+    color: var(--text-popup);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    content-visibility: auto;
+    contain-intrinsic-size: 60px;
+}
+
+.search-result-item:hover {
+    background-color: var(--button-hover);
+}
+
+.search-result-title {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-result-workspace {
+    font-size: 0.85em;
+    opacity: 0.7;
+}
+
+.search-no-results {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-popup);
+    opacity: 0.7;
+    font-size: 0.9em;
+}
+
+/* Workspace search results (quick switcher) */
+.search-workspace-item {
+    background-color: var(--button-bg);
+    margin: 10px 10px 0 10px;
+    padding: 8px 11px;
+    border-radius: 4px;
+    transition: all .2s ease-out;
+    font-size: .8em;
+    color: var(--text-popup);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    content-visibility: auto;
+    contain-intrinsic-size: 60px;
+}
+
+.search-workspace-item:hover,
+.search-result-item.keyboard-selected,
+.search-workspace-item.keyboard-selected {
+    background-color: var(--button-hover);
+}
+
+.search-workspace-item[data-color] {
+    border-left: 4px solid var(--wsp-color);
+    padding-left: 8px;
+}
+
+.search-workspace-name {
+    font-weight: 500;
+}
+
+.search-workspace-count {
+    opacity: 0.7;
+    font-size: 0.9em;
+}
+
+.search-result-type {
+    margin-left: auto;
+    font-size: 0.75em;
+    background-color: var(--button-primary);
+    color: var(--button-primary-text);
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+/* ============================= */
+/* 4. Listen & List-Items
+/* ============================= */
+ul#wsp-list {
+    list-style: none;
+    background: var(--bg-popup);
+    padding-bottom: 15px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* Pinned section separator */
+.pinned-separator {
+    display: flex;
+    align-items: center;
+    margin: 15px 10px 5px 10px;
+    font-size: 0.7em;
+    color: var(--text-popup);
+    opacity: 0.6;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.pinned-separator::after {
+    content: "";
+    flex: 1;
+    margin-left: 10px;
+    border-bottom: 1px solid var(--border-popup);
+}
+
+ul#wsp-list[hidden] {
+    display: none;
+}
+
+li.wsp-list-item {
+    background-color: var(--button-bg);
+    margin: 10px 0 0 10px;
+    padding: 11px;
+    width: calc(100% - 20px);
+    border-radius: 4px;
+    transition: all .3s ease-out;
+    font-size: .8em;
+    position: relative;
+    color: var(--text-popup);
+    content-visibility: auto;
+    contain-intrinsic-size: 60px;
+}
+
+li.wsp-list-item:hover,
+li.wsp-list-item.keyboard-selected {
+    background-color: var(--button-hover);
+}
+
+li.wsp-list-item.active {
+    background-color: var(--button-active);
+}
+
+li.wsp-list-item.empty-workspace {
+    opacity: 0.6;
+}
+
+li.wsp-list-item.empty-workspace .tabs-qty {
+    font-style: italic;
+}
+
+/*li.wsp-list-item.active::after {
+    content: ' – current';
+    color: var(--text-popup);
+}*/
+
+li.wsp-list-item .tabs-qty {
+    /*background: var(--button-primary);*/
+    /*border-radius: 10px;*/
+    /*color: var(--button-primary-text);*/
+    font-weight: bold;
+    font-size: .875em;
+    min-width: 15px;
+    padding: 0 5px;
+}
+
+/* ============================= */
+/* 5. Buttons (Rename/Delete)
+/* ============================= */
+li.wsp-list-item a.edit-btn {
+    position: absolute;
+    top: 8px;
+    height: 16px;
+    width: 16px;
+}
+
+li.wsp-list-item a.rename-btn {
+    right: 135px;
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    background-color: var(--text-popup);
+    mask-image: url("../img/rename.svg");
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+}
+
+li.wsp-list-item a.pin-btn {
+    right: 110px;
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    background-color: var(--text-popup);
+    mask-image: url("../img/pin.svg");
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+    opacity: 0.4;
+}
+
+li.wsp-list-item a.pin-btn.pinned {
+    opacity: 1;
+    background-color: var(--button-primary);
+}
+
+li.wsp-list-item a.suspend-btn {
+    right: 60px;
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    background-color: var(--text-popup);
+    mask-image: url("../img/suspend.svg");
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+    opacity: 0.4;
+}
+
+li.wsp-list-item a.suspend-btn:hover {
+    opacity: 0.7;
+}
+
+li.wsp-list-item.suspended {
+    opacity: 0.5;
+}
+
+li.wsp-list-item.suspended .tabs-qty::after {
+    content: " - suspended";
+    font-style: italic;
+}
+
+/* More actions dropdown */
+li.wsp-list-item .more-actions-container {
+    position: absolute;
+    top: 8px;
+    right: 35px;
+}
+
+li.wsp-list-item a.more-btn {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    background-color: var(--text-popup);
+    mask-image: url("../img/more.svg");
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+    opacity: 0.6;
+    cursor: pointer;
+}
+
+li.wsp-list-item a.more-btn:hover {
+    opacity: 1;
+}
+
+.more-actions-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: var(--bg-popup);
+    border: 1px solid var(--border-popup);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    min-width: 140px;
+    display: none;
+}
+
+.more-actions-menu.show {
+    display: block;
+}
+
+.more-actions-menu a {
+    display: block;
+    padding: 8px 12px;
+    color: var(--text-popup);
+    text-decoration: none;
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.more-actions-menu a:hover {
+    background-color: var(--button-hover);
+}
+
+.more-actions-menu a.destructive {
+    color: #f44336;
+}
+
+/* ============================= */
+/* Drag and Drop
+/* ============================= */
+li.wsp-list-item {
+    cursor: grab;
+}
+
+li.wsp-list-item.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+li.wsp-list-item.drag-over {
+    border-top: 2px solid var(--button-primary);
+    margin-top: 8px;
+}
+
+.drag-handle {
+    position: absolute;
+    left: -2px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 16px;
+    opacity: 0.3;
+    cursor: grab;
+}
+
+.drag-handle::before,
+.drag-handle::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--text-popup);
+    border-radius: 1px;
+}
+
+.drag-handle::before {
+    top: 4px;
+}
+
+.drag-handle::after {
+    bottom: 4px;
+}
+
+li.wsp-list-item:hover .drag-handle {
+    opacity: 0.6;
+}
+
+li.wsp-list-item a.copy-urls-btn {
+    right: 85px;
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    background-color: var(--text-popup);
+    mask-image: url("../img/copy.svg");
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+}
+
+li.wsp-list-item a.copy-urls-btn.copied {
+    background-color: #4caf50;
+}
+
+li.wsp-list-item a.duplicate-btn {
+    right: 35px;
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    background-color: var(--text-popup);
+    mask-image: url("../img/duplicate.svg");
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+}
+
+li.wsp-list-item a.delete-btn {
+    right: 10px;
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    background-color: var(--text-popup);
+    mask-image: url("../img/delete.svg");
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+}
+
+li.no-wsp {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 250px;
+    height: 100%;
+    width: 100%;
+    padding: 20px;
+    color: var(--text-popup);
+    font-size: 1.2em;
+}
+
+/* ============================= */
+/* 6. Footer
+/* ============================= */
+
+.footer {
+    display: inline-block;
+    padding: 5px 20px;
+    color: var(--button-primary-text);
+    font-weight: 600;
+    font-size: .8em;
+    text-decoration: none;
+    line-height: 20px;
+    letter-spacing: 1px;
+    background: transparent;
+}
+
+.footer:hover {
+    background: var(--button-hover);
+}
+
+.footer.full-width {
+    width: 100%;
+}
+
+.footer#createNewWsp {
+    display: block;
+    width: calc(100% - 20px); /* Account for horizontal margins */
+    margin: 10px auto;
+    padding: 6px 12px;
+    background-color: var(--button-primary);
+    color: var(--button-primary-text);
+    font-weight: 500;
+    text-align: center;
+    letter-spacing: 1px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.footer#createNewWsp:hover {
+    background-color: var(--button-primary-hover);
+}
+
+.footer-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    padding: 0 10px 10px 10px;
+}
+
+.footer-action {
+    font-size: 0.75em;
+    color: var(--text-popup);
+    text-decoration: none;
+    opacity: 0.7;
+    cursor: pointer;
+}
+
+.footer-action:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+
+/* ============================= */
+/* 7. Form & Table Reset
+/* ============================= */
+form, table {
+    margin: 0;
+    border: 0;
+    border-spacing: 0;
+    width: 100%;
+}
+
+[contenteditable] {
+    outline: none;
+    overflow-wrap: break-word;
+}
+
+/* ============================= */
+/* 8. Dialogs
+/* ============================= */
+
+#custom-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    place-items: center;
+    z-index: 9999;
+}
+
+#custom-dialog-backdrop.show {
+    display: grid;
+}
+
+.custom-dialog {
+    background-color: var(--bg-popup);
+    color: var(--text-popup);
+    padding: 20px;
+    border-radius: 6px;
+    width: 300px;
+    max-width: calc(100vw - 20px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    font-family: sans-serif;
+}
+
+.custom-dialog-message {
+    margin-bottom: 1em;
+    font-size: 0.95em;
+}
+
+.custom-dialog-input {
+    width: 100%;
+    padding: 6px 10px;
+    margin-bottom: 1em;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    box-sizing: border-box;
+}
+
+.custom-dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.custom-dialog-buttons button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    background-color: var(--button-primary);
+    color: var(--button-primary-text);
+}
+
+.custom-dialog-buttons button:hover {
+    background-color: var(--button-primary-hover);
+}
+
+.custom-dialog-buttons button:disabled {
+    background-color: var(--bg-toolbar-inactive);
+    color: var(--text-toolbar);
+}
+
+/* ============================= */
+/* 9. Color Picker
+/* ============================= */
+.color-picker {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 1em;
+    justify-content: center;
+}
+
+.color-picker[hidden] {
+    display: none;
+}
+
+.color-option {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    padding: 0;
+    background: none;
+    appearance: none;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.color-option:hover {
+    transform: scale(1.15);
+}
+
+.color-option.selected {
+    border-color: var(--text-popup);
+    transform: scale(1.15);
+}
+
+.color-option:focus-visible {
+    outline-offset: 3px;
+}
+
+/* ============================= */
+/* 10. Workspace Colors
+/* ============================= */
+li.wsp-list-item[data-color] {
+    border-left: 4px solid var(--wsp-color);
+    padding-left: 8px;
+}
+
+.search-result-item[data-color] {
+    border-left: 4px solid var(--wsp-color);
+    padding-left: 8px;
+}
+
+/* ============================= */
+/* 11. Tab Limit Warning
+/* ============================= */
+li.wsp-list-item.exceeds-tab-limit {
+    border-color: #ff9800;
+}
+
+li.wsp-list-item .tabs-qty.tab-limit-warning {
+    color: #ff9800;
+}
+
+/* ============================= */
+/* 12. Settings Dialog
+/* ============================= */
+.settings-dialog {
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.settings-section {
+    margin-bottom: 20px;
+}
+
+.settings-section h4 {
+    margin-bottom: 10px;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.settings-row label {
+    flex: 1;
+    font-size: 0.85em;
+}
+
+.settings-row input[type="number"] {
+    width: 70px;
+    padding: 6px 8px;
+    border: 1px solid var(--border-popup);
+    border-radius: 4px;
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    text-align: right;
+}
+
+.settings-hint {
+    font-size: 0.75em;
+    opacity: 0.7;
+    margin-top: -8px;
+    margin-bottom: 12px;
+}
+
+/* ============================= */
+/* 13. Tab Preview Tooltip
+/* ============================= */
+.tab-preview-tooltip {
+    position: fixed;
+    z-index: 10000;
+    background: var(--bg-popup);
+    border: 1px solid var(--border-popup);
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    padding: 12px;
+    max-width: 300px;
+    min-width: 200px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.tab-preview-tooltip.visible {
+    opacity: 1;
+}
+
+/* ============================= */
+/* Undo Toast
+/* ============================= */
+.undo-toast {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    z-index: 10001;
+    background: var(--bg-popup);
+    border: 1px solid var(--border-popup);
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.undo-toast.hidden {
+    display: none;
+}
+
+.undo-toast-message {
+    flex: 1;
+    font-size: 0.8em;
+    color: var(--text-popup);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.undo-toast-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.undo-toast-actions button {
+    border: none;
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+    background: var(--button-primary);
+    color: var(--button-primary-text);
+    font-size: 0.8em;
+}
+
+.undo-toast-actions button:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.tab-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.tab-preview-favicon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 4px;
+    background: var(--button-bg);
+    object-fit: contain;
+}
+
+.tab-preview-title {
+    font-weight: 500;
+    font-size: 0.9em;
+    line-height: 1.3;
+    word-break: break-word;
+}
+
+.tab-preview-url {
+    font-size: 0.75em;
+    color: var(--text-popup);
+    opacity: 0.6;
+    word-break: break-all;
+    margin-bottom: 8px;
+    max-height: 40px;
+    overflow: hidden;
+}
+
+.tab-preview-workspace {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-popup);
+    font-size: 0.8em;
+}
+
+.tab-preview-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.tab-preview-workspace-name {
+    opacity: 0.8;
+}
+
+/* ============================= */
+/* 14. Workspace Folders
+/* ============================= */
+.folder-item {
+    margin: 10px 10px 0 10px;
+    background: transparent;
+}
+
+.folder-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    background-color: var(--button-bg);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.folder-header:hover {
+    background-color: var(--button-hover);
+}
+
+.folder-header.drag-over-folder {
+    border: 2px dashed var(--button-primary);
+}
+
+.folder-toggle {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    transition: transform 0.2s ease;
+    opacity: 0.6;
+}
+
+.folder-toggle::before {
+    content: "▶";
+    font-size: 0.7em;
+}
+
+.folder-item.expanded .folder-toggle::before {
+    content: "▼";
+}
+
+.folder-icon {
+    margin-right: 8px;
+    font-size: 1em;
+}
+
+.folder-name {
+    flex: 1;
+    font-weight: 500;
+    font-size: 0.85em;
+}
+
+.folder-count {
+    font-size: 0.75em;
+    opacity: 0.6;
+    margin-right: 8px;
+}
+
+.folder-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.folder-header:hover .folder-actions {
+    opacity: 1;
+}
+
+.folder-actions a {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    background-color: var(--text-popup);
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+    opacity: 0.6;
+}
+
+.folder-actions a:hover {
+    opacity: 1;
+}
+
+.folder-actions .folder-rename-btn {
+    mask-image: url("../img/rename.svg");
+}
+
+.folder-actions .folder-delete-btn {
+    mask-image: url("../img/delete.svg");
+}
+
+.folder-actions .folder-rules-btn {
+    mask-image: url("../img/more.svg");
+}
+
+.folder-contents {
+    margin-left: 20px;
+    border-left: 1px solid var(--border-popup);
+    padding-left: 5px;
+    display: none;
+}
+
+.folder-item.expanded .folder-contents {
+    display: block;
+}
+
+.folder-item.collapsed .folder-contents {
+    display: none;
+}
+
+.folder-contents li.wsp-list-item {
+    margin-left: 5px;
+    width: calc(100% - 10px);
+}
+
+/* Create folder link */
+.create-folder-link {
+    display: block;
+    text-align: center;
+    padding: 8px;
+    margin: 5px 10px;
+    font-size: 0.75em;
+    color: var(--text-popup);
+    opacity: 0.6;
+    cursor: pointer;
+    border: 1px dashed var(--border-popup);
+    border-radius: 4px;
+}
+
+.create-folder-link:hover {
+    opacity: 1;
+    background: var(--button-bg);
+}
+
+/* Drag out of folder indicator */
+#wsp-list.drag-over-root {
+    background: rgba(33, 150, 243, 0.1);
+    border: 2px dashed #2196f3;
+    border-radius: 4px;
+}
+
+#wsp-list.drag-over-root::after {
+    content: "Drop here to remove from folder";
+    display: block;
+    text-align: center;
+    padding: 10px;
+    font-size: 0.8em;
+    color: #2196f3;
+    opacity: 0.8;
+}
+
+/* Safe mode */
+.safe-mode {
+    padding: 14px;
+}
+
+.safe-mode-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-popup);
+}
+
+.safe-mode-message {
+    margin-bottom: 12px;
+    line-height: 1.4;
+    color: var(--text-popup);
+    opacity: 0.9;
+}
+
+.safe-mode-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.safe-mode-actions button {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--border-popup);
+    border-radius: 4px;
+    background: var(--button-bg);
+    color: var(--text-popup);
+    cursor: pointer;
+}
+
+.safe-mode-actions button:hover {
+    background: var(--button-hover);
+}
+
+.safe-mode-details {
+    white-space: pre-wrap;
+    max-height: 140px;
+    overflow: auto;
+    padding: 8px;
+    border: 1px solid var(--border-popup);
+    border-radius: 4px;
+    background: var(--bg-popup);
+    color: var(--text-popup);
+    opacity: 0.85;
+    font-size: 0.75em;
+}

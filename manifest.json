@@ -1,0 +1,160 @@
+{
+  "manifest_version": 2,
+  "name": "Workspaces",
+  "version": "1.2.3",
+  "description": "A beautiful workspace manager for Firefox",
+  "icons": {
+    "128": "icons/icon128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "workspaces@VisorCraft",
+      "strict_min_version": "147.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  },
+  "permissions": [
+    "tabs",
+    "tabHide",
+    "tabGroups",
+    "alarms",
+    "storage",
+    "menus",
+    "cookies",
+    "downloads"
+  ],
+  "content_security_policy": "script-src 'self'; object-src 'self'",
+  "browser_action": {
+    "browser_style": true,
+    "default_icon": {
+      "64": "icons/dark64.png"
+    },
+    "default_title": "Workspaces",
+    "default_popup": "popup/wsp.html",
+    "theme_icons": [
+      {
+        "light": "icons/light64.png",
+        "dark": "icons/dark64.png",
+        "size": 64
+      }
+    ]
+  },
+  "background": {
+    "scripts": [
+      "backend/storage.js",
+      "backend/workspace.js",
+      "backend/brainer.js",
+      "backend/handler.js",
+      "backend/tint.js"
+    ]
+  },
+  "sidebar_action": {
+    "default_title": "Workspaces",
+    "default_panel": "popup/wsp.html",
+    "default_icon": {
+      "64": "icons/dark64.png"
+    }
+  },
+  "commands": {
+    "_execute_browser_action": {
+      "suggested_key": {
+        "default": "Alt+W"
+      },
+      "description": "Open Workspaces popup"
+    },
+    "create-new-workspace": {
+      "suggested_key": {
+        "default": "Alt+Shift+N"
+      },
+      "description": "Create new workspace"
+    },
+    "next-workspace": {
+      "suggested_key": {
+        "default": "Ctrl+Alt+Right"
+      },
+      "description": "Switch to next workspace"
+    },
+    "previous-workspace": {
+      "suggested_key": {
+        "default": "Ctrl+Alt+Left"
+      },
+      "description": "Switch to previous workspace"
+    },
+    "workspace-1": {
+      "suggested_key": {
+        "default": "Alt+1"
+      },
+      "description": "Switch to workspace 1"
+    },
+    "workspace-2": {
+      "suggested_key": {
+        "default": "Alt+2"
+      },
+      "description": "Switch to workspace 2"
+    },
+    "workspace-3": {
+      "suggested_key": {
+        "default": "Alt+3"
+      },
+      "description": "Switch to workspace 3"
+    },
+    "workspace-4": {
+      "suggested_key": {
+        "default": "Alt+4"
+      },
+      "description": "Switch to workspace 4"
+    },
+    "workspace-5": {
+      "suggested_key": {
+        "default": "Alt+5"
+      },
+      "description": "Switch to workspace 5"
+    },
+    "workspace-6": {
+      "suggested_key": {
+        "default": "Alt+6"
+      },
+      "description": "Switch to workspace 6"
+    },
+    "workspace-7": {
+      "suggested_key": {
+        "default": "Alt+7"
+      },
+      "description": "Switch to workspace 7"
+    },
+    "workspace-8": {
+      "suggested_key": {
+        "default": "Alt+8"
+      },
+      "description": "Switch to workspace 8"
+    },
+    "workspace-9": {
+      "suggested_key": {
+        "default": "Alt+9"
+      },
+      "description": "Switch to workspace 9"
+    },
+    "focus-search": {
+      "suggested_key": {
+        "default": "Alt+Shift+F"
+      },
+      "description": "Focus Workspaces search"
+    },
+    "quick-switcher": {
+      "suggested_key": {
+        "default": "Alt+P"
+      },
+      "description": "Open quick switcher"
+    },
+    "move-tab-to-workspace": {
+      "suggested_key": {
+        "default": "Alt+M"
+      },
+      "description": "Move current tab to another workspace"
+    }
+  }
+}

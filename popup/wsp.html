@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta content="text/html" charset="utf-8">
+    <title>Workspace Manager</title>
+    <link rel="stylesheet" href="css/wsp.css">
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> -->
+</head>
+<body>
+<div id="custom-dialog-backdrop">
+    <div class="custom-dialog" role="dialog" aria-modal="true" aria-labelledby="custom-dialog-message">
+        <div class="custom-dialog-message" id="custom-dialog-message"></div>
+        <input type="text" id="custom-dialog-input" class="custom-dialog-input" hidden/>
+        <div class="color-picker" id="custom-dialog-colors" hidden>
+            <button type="button" class="color-option" data-color="#f44336" style="background-color: #f44336;" aria-label="Red" title="Red"></button>
+            <button type="button" class="color-option" data-color="#ff9800" style="background-color: #ff9800;" aria-label="Orange" title="Orange"></button>
+            <button type="button" class="color-option" data-color="#ffeb3b" style="background-color: #ffeb3b;" aria-label="Yellow" title="Yellow"></button>
+            <button type="button" class="color-option" data-color="#4caf50" style="background-color: #4caf50;" aria-label="Green" title="Green"></button>
+            <button type="button" class="color-option" data-color="#2196f3" style="background-color: #2196f3;" aria-label="Blue" title="Blue"></button>
+            <button type="button" class="color-option" data-color="#9c27b0" style="background-color: #9c27b0;" aria-label="Purple" title="Purple"></button>
+            <button type="button" class="color-option" data-color="#e91e63" style="background-color: #e91e63;" aria-label="Pink" title="Pink"></button>
+            <button type="button" class="color-option" data-color="#9e9e9e" style="background-color: #9e9e9e;" aria-label="Gray" title="Gray"></button>
+        </div>
+        <div class="custom-dialog-buttons">
+            <button type="button" id="custom-dialog-ok">OK</button>
+            <button type="button" id="custom-dialog-cancel">Cancel</button>
+        </div>
+    </div>
+</div>
+<div class="container" id="wsp-container">
+    <div class="search-container">
+        <input type="text" id="tab-search" class="tab-search-input" placeholder="Search tabs… (type \">\" for commands)" autocomplete="off" aria-label="Search tabs, workspaces, or commands">
+    </div>
+    <ul id="wsp-list" aria-label="Workspaces"></ul>
+    <ul id="search-results" class="search-results" role="listbox" aria-label="Search results" hidden></ul>
+    <div class="footer-container">
+        <a href="#" class="footer" id="createNewWsp">New</a>
+        <div class="footer-actions">
+            <a href="#" class="footer-action" id="templatesLink" title="Create from template">Templates</a>
+            <a href="#" class="footer-action" id="exportWorkspaces" title="Export workspaces">Export</a>
+            <a href="#" class="footer-action" id="importWorkspaces" title="Import workspaces">Import</a>
+            <a href="#" class="footer-action" id="settingsLink" title="Settings">Settings</a>
+        </div>
+        <input type="file" id="importFileInput" accept=".json" hidden>
+    </div>
+</div>
+<script src="js/wsp.js"></script>
+</body>
+</html>
