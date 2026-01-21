@@ -57,7 +57,7 @@ Group your tabs into workspaces to navigate through tabs more efficiently. This 
 
 A pre-signed extension is included in this repository for direct installation:
 
-1. Download [`workspaces-1.2.3.xpi`](workspaces-1.2.3.xpi) from this repo
+1. Download [`workspaces-x.x.x.xpi`](https://github.com/visorcraft/Foxden/releases) from this repo's release page
 2. In Firefox, go to `about:addons`
 3. Click the gear icon -> **"Install Add-on From File..."**
 4. Select the downloaded `.xpi` file
