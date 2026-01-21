@@ -163,3 +163,6 @@ TASKS.md
 TODO.md
 IDEAS.md
 SCAN_REPORT.md
+
+# Build artifacts
+*.xpi
