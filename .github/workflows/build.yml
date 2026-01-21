@@ -29,18 +29,18 @@ jobs:
           echo "manifest.json is valid JSON"
 
       - name: Lint extension with web-ext
-        run: web-ext lint --source-dir . --ignore-files "scripts/**" "tests/**" "screenshots/**" "docs/**" "*.md" "*.xpi"
+        run: web-ext lint --source-dir . --ignore-files "scripts/**" "tests/**" "assets/screenshots/**" "docs/**" "*.md" "*.xpi"
 
       - name: Build extension package
         run: |
-          zip -r workspaces-extension.zip backend/ icons/ popup/ manifest.json
+          zip -r Foxden-extension.zip backend/ assets/icons/ popup/ manifest.json
           echo "Built extension package:"
-          ls -la workspaces-extension.zip
-          unzip -l workspaces-extension.zip
+          ls -la Foxden-extension.zip
+          unzip -l Foxden-extension.zip
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: firefox-extension
-          path: workspaces-extension.zip
+          path: Foxden-extension.zip
           retention-days: 7

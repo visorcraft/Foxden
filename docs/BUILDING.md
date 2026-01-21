@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Windows with PowerShell, or any system with a zip utility
-- Firefox 139.0 or later
+- Firefox 147 or later
 
 ## Build Steps
 
@@ -17,15 +17,15 @@
 
    **PowerShell (Windows):**
    ```powershell
-   Compress-Archive -Path "backend", "icons", "popup", "manifest.json" -DestinationPath "workspaces-extension.zip" -Force
+   Compress-Archive -Path "backend", "assets/icons", "popup", "manifest.json" -DestinationPath "Foxden-extension.zip" -Force
    ```
 
    **Bash (Linux/macOS):**
    ```bash
-   zip -r workspaces-extension.zip backend/ icons/ popup/ manifest.json
+   zip -r Foxden-extension.zip backend/ assets/icons/ popup/ manifest.json
    ```
 
-3. Your extension package is now at `workspaces-extension.zip`
+3. Your extension package is now at `Foxden-extension.zip`
 
 ## Next Steps
 

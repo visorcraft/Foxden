@@ -14,12 +14,12 @@ No build tooling required. Create extension package manually:
 
 **Windows (PowerShell):**
 ```powershell
-Compress-Archive -Path "backend", "icons", "popup", "manifest.json" -DestinationPath "workspaces-extension.zip" -Force
+Compress-Archive -Path "backend", "assets/icons", "popup", "manifest.json" -DestinationPath "Foxden-extension.zip" -Force
 ```
 
 **Linux/macOS:**
 ```bash
-zip -r workspaces-extension.zip backend/ icons/ popup/ manifest.json
+zip -r Foxden-extension.zip backend/ assets/icons/ popup/ manifest.json
 ```
 
 ## Testing

@@ -1,6 +1,6 @@
 # Foxden
 
-![Foxden - A cozy home for your Firefox tabs](assets/foxden.png)
+![Foxden - A cozy home for your Firefox tabs](assets/Foxden.png)
 
 **Finally, a cozy den for all your tabs!**
 
