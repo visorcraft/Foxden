@@ -90,6 +90,7 @@ if (browser) {
     undoLastAction: async () => Brainer.undoLastAction(),
     getWorkspaceName: async () => Brainer.generateWspName(),
     getPrimaryWindowId: async () => WSPStorageManger.getPrimaryWindowId(),
+    rebindPrimaryWindow: async (message) => Brainer.rebindPrimaryWindow(message.oldWindowId, message.newWindowId),
     getDiagnostics: async () => Brainer.getDiagnostics(),
     resetAllData: async (message) => Brainer.resetAllData(message.windowId),
 

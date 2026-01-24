@@ -2752,7 +2752,7 @@ class Brainer {
       const activeWsp = await Brainer.getActiveWsp(primaryWindowId);
       if (!activeWsp) {
         await browser.browserAction.setBadgeText({ text: "" });
-        await browser.browserAction.setTitle({ title: "Workspaces" });
+        await browser.browserAction.setTitle({ title: "Foxden" });
         return;
       }
 
@@ -2768,7 +2768,7 @@ class Brainer {
       const tabCount = activeWsp.tabs.length;
       const tabText = tabCount === 1 ? "1 tab" : `${tabCount} tabs`;
       await browser.browserAction.setTitle({
-        title: `Workspaces - ${activeWsp.name} (${tabText})`
+        title: `Foxden - ${activeWsp.name} (${tabText})`
       });
     } catch (e) {
       console.warn("Error updating badge:", e);

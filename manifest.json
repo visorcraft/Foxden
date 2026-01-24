@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
-  "name": "Workspaces",
-  "version": "1.0.2",
+  "name": "Foxden",
+  "version": "1.0.3",
   "description": "Foxden is a beautiful workspace manager for Firefox. Group tabs, switch contexts, search everything. Features templates, folders, drag-drop, suspend to free memory, and full keyboard navigation. No build tools required.",
   "icons": {
     "128": "assets/icons/128x128.png"
@@ -33,7 +33,7 @@
     "default_icon": {
       "64": "assets/icons/64x64.png"
     },
-    "default_title": "Workspaces",
+    "default_title": "Foxden",
     "default_popup": "popup/wsp.html"
   },
   "background": {
@@ -46,7 +46,7 @@
     ]
   },
   "sidebar_action": {
-    "default_title": "Workspaces",
+    "default_title": "Foxden",
     "default_panel": "popup/wsp.html",
     "default_icon": {
       "64": "assets/icons/64x64.png"
@@ -57,7 +57,7 @@
       "suggested_key": {
         "default": "Alt+W"
       },
-      "description": "Open Workspaces popup"
+      "description": "Open Foxden popup"
     },
     "create-new-workspace": {
       "suggested_key": {
@@ -135,7 +135,7 @@
       "suggested_key": {
         "default": "Alt+Shift+F"
       },
-      "description": "Focus Workspaces search"
+      "description": "Focus Foxden search"
     },
     "quick-switcher": {
       "suggested_key": {

@@ -486,7 +486,7 @@ class WorkspaceUI {
 
     resetBtn?.addEventListener("click", async () => {
       const confirmed = await showCustomDialog({
-        message: "Reset all Workspaces data? This cannot be undone.",
+        message: "Reset all Foxden data? This cannot be undone.",
         withInput: false
       });
       if (!confirmed) return;
@@ -520,9 +520,65 @@ class WorkspaceUI {
       }
 
       if (primaryWindowId !== this.currentWindowId) {
+        // Check if the primary window actually exists - it may be stale after reinstall
+        let primaryWindowExists = false;
+        if (primaryWindowId != null) {
+          try {
+            await browser.windows.get(primaryWindowId);
+            primaryWindowExists = true;
+          } catch (e) {
+            // Window doesn't exist - stale reference
+            primaryWindowExists = false;
+          }
+        }
+
+        // If primary window doesn't exist, auto-claim this window
+        if (!primaryWindowExists) {
+          try {
+            const result = await this._callBackgroundTask("rebindPrimaryWindow", {
+              oldWindowId: primaryWindowId,
+              newWindowId: this.currentWindowId
+            });
+            if (result?.success) {
+              location.reload();
+              return;
+            }
+          } catch (e) {
+            // Fall through to show manual button
+          }
+        }
+
         document.getElementById("createNewWsp").style.display = "none";
         document.querySelector(".search-container").style.display = "none";
-        document.getElementById("wsp-list").innerHTML = "<li class='no-wsp'>Workspaces are only available in the primary window.</li>";
+        const wspList = document.getElementById("wsp-list");
+        wspList.innerHTML = `
+          <li class='no-wsp'>
+            <span>Workspaces are managed in another window.</span>
+            <button id="makePrimaryBtn" class="footer" style="margin-top: 16px; padding: 8px 16px; background-color: var(--button-primary); color: var(--button-primary-text); border: none; border-radius: 4px; cursor: pointer;">
+              Use this window instead
+            </button>
+            <small style="margin-top: 8px; opacity: 0.7;">This will move your workspaces here.</small>
+          </li>`;
+        document.getElementById("makePrimaryBtn").addEventListener("click", async () => {
+          const btn = document.getElementById("makePrimaryBtn");
+          btn.disabled = true;
+          btn.textContent = "Switching...";
+          try {
+            const result = await this._callBackgroundTask("rebindPrimaryWindow", {
+              oldWindowId: primaryWindowId,
+              newWindowId: this.currentWindowId
+            });
+            if (result?.success) {
+              location.reload();
+            } else {
+              btn.textContent = "Failed - try again";
+              btn.disabled = false;
+            }
+          } catch (e) {
+            btn.textContent = "Failed - try again";
+            btn.disabled = false;
+          }
+        });
         return;
       }
 
@@ -607,7 +663,7 @@ class WorkspaceUI {
     }
     } catch (e) {
       await this._enterSafeMode({
-        message: "Workspaces could not be initialized.",
+        message: "Foxden could not be initialized.",
         details: e?.stack ? String(e.stack) : (e?.message ? String(e.message) : String(e))
       });
       return;
