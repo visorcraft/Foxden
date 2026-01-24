@@ -2166,8 +2166,10 @@ class Brainer {
       }
 
       // No other windows: treat as shutdown/restart and migrate on next window creation.
-      await WSPStorageManger.removePrimaryWindowId();
-      await WSPStorageManger.setPrimaryWindowLastId(windowId);
+      // CRITICAL: Use immediate writes that bypass the queue to ensure data is persisted
+      // before browser shuts down. The queued/delayed flush may not complete in time.
+      await WSPStorageManger.removePrimaryWindowIdImmediate();
+      await WSPStorageManger.setPrimaryWindowLastIdImmediate(windowId);
       initialized = false;
     });
 
@@ -2494,6 +2496,10 @@ class Brainer {
     if (wsp.active) {
       await w.updateTabGroups();
     }
+
+    // Flush storage immediately to ensure workspace is persisted
+    // This is critical for import operations and prevents data loss on browser close
+    await WSPStorageManger.flushPending().catch(() => {});
 
     await this.refreshTabMenu();
     await this.updateBadge();

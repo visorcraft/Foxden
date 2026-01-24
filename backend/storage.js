@@ -498,6 +498,19 @@ class WSPStorageManger {
     WSPStorageManger._queueLocalSet(key, windowId);
   }
 
+  // Direct write that bypasses the queue - use for critical shutdown operations
+  // where we can't wait for the delayed flush
+  static async setPrimaryWindowLastIdImmediate(windowId) {
+    const key = `primary-window-last-id`;
+    await browser.storage.local.set({ [key]: windowId });
+  }
+
+  // Direct write that bypasses the queue - use for critical shutdown operations
+  static async removePrimaryWindowIdImmediate() {
+    const key = `primary-window-id`;
+    await browser.storage.local.remove(key);
+  }
+
   static async removePrimaryWindowLastId() {
     const key = `primary-window-last-id`;
     WSPStorageManger._queueLocalRemove(key);

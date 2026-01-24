@@ -4039,7 +4039,9 @@ class WorkspaceUI {
         return;
       }
 
-      const windowId = (await browser.windows.getCurrent()).id;
+      // Use workspaceWindowId (the primary window) instead of the popup's window ID
+      // to ensure workspaces are stored correctly for persistence across restarts
+      const windowId = this.workspaceWindowId || (await browser.windows.getCurrent()).id;
       let importedCount = 0;
       let failedTabs = 0;
 
