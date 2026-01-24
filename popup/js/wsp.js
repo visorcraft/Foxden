@@ -1,3 +1,39 @@
+// Helper to determine if a color is dark (for contrast detection)
+function isColorDark(color) {
+  if (!color) return false;
+
+  let r, g, b;
+
+  // Handle rgb/rgba format
+  const rgbMatch = color.match(/rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+  if (rgbMatch) {
+    r = parseInt(rgbMatch[1], 10);
+    g = parseInt(rgbMatch[2], 10);
+    b = parseInt(rgbMatch[3], 10);
+  }
+  // Handle hex format
+  else if (color.startsWith('#')) {
+    const hex = color.slice(1);
+    if (hex.length === 3) {
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b = parseInt(hex[2] + hex[2], 16);
+    } else if (hex.length >= 6) {
+      r = parseInt(hex.slice(0, 2), 16);
+      g = parseInt(hex.slice(2, 4), 16);
+      b = parseInt(hex.slice(4, 6), 16);
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+
+  // Calculate relative luminance (per WCAG)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance < 0.5;
+}
+
 async function applyTheme() {
   try {
     const theme = await browser.theme.getCurrent();
@@ -29,6 +65,21 @@ async function applyTheme() {
       if (colors[key]) {
         document.documentElement.style.setProperty(varName, colors[key]);
       }
+    }
+
+    // Force appropriate text color based on background luminance
+    // This overrides Firefox theme if the contrast would be poor
+    if (colors.popup) {
+      const popupIsDark = isColorDark(colors.popup);
+      const textColor = popupIsDark ? '#ffffff' : '#000000';
+      document.documentElement.style.setProperty('--text-popup', textColor);
+    }
+
+    if (colors.toolbar) {
+      const toolbarIsDark = isColorDark(colors.toolbar);
+      const textColor = toolbarIsDark ? '#ffffff' : '#000000';
+      document.documentElement.style.setProperty('--text-toolbar', textColor);
+      document.documentElement.style.setProperty('--text-sidebar', textColor);
     }
 
     // Optional: System-Font aus properties übernehmen
@@ -1945,6 +1996,27 @@ class WorkspaceUI {
       document.querySelectorAll(".more-actions-menu.show").forEach(menu => {
         if (menu !== moreMenu) menu.classList.remove("show");
       });
+
+      // Position the menu using fixed positioning
+      const rect = moreBtn.getBoundingClientRect();
+      const menuHeight = 250; // Approximate menu height
+      const viewportHeight = window.innerHeight;
+
+      // Position menu to the left of the button, opening downward by default
+      let top = rect.bottom + 4;
+      let left = rect.right - 160; // Menu width is ~160px
+
+      // If menu would overflow bottom, open upward instead
+      if (top + menuHeight > viewportHeight) {
+        top = rect.top - menuHeight - 4;
+      }
+
+      // Ensure menu doesn't go off-screen left
+      if (left < 8) left = 8;
+
+      moreMenu.style.top = `${top}px`;
+      moreMenu.style.left = `${left}px`;
+
       moreMenu.classList.toggle("show");
     });
 

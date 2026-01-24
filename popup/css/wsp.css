@@ -28,6 +28,25 @@
     --ui-font: menu;
 }
 
+/* Dark mode fallback when Firefox theme doesn't provide all colors */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-toolbar: #2b2a33;
+        --bg-toolbar-inactive: #1c1b22;
+        --text-toolbar: #fbfbfe;
+        --text-sidebar: #fbfbfe;
+        --bg-popup: #42414d;
+        --border-popup: rgba(255, 255, 255, 0.1);
+        --highlight-popup: #52515e;
+        --text-popup: #fbfbfe;
+        --button-bg: rgba(255, 255, 255, 0.1);
+        --button-hover: rgba(255, 255, 255, 0.2);
+        --button-active: rgba(255, 255, 255, 0.3);
+        --input-bg: #1c1b22;
+        --input-text: #fbfbfe;
+    }
+}
+
 /* ============================= */
 /* 2. Base-Reset
 /* ============================= */
@@ -277,8 +296,6 @@ li.wsp-list-item {
     font-size: .8em;
     position: relative;
     color: var(--text-popup);
-    content-visibility: auto;
-    contain-intrinsic-size: 60px;
 }
 
 li.wsp-list-item:hover,
@@ -404,15 +421,13 @@ li.wsp-list-item a.more-btn:hover {
 }
 
 .more-actions-menu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    background: var(--bg-popup);
-    border: 1px solid var(--border-popup);
+    position: fixed;
+    background: #2b2a33 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 1000;
-    min-width: 140px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    min-width: 160px;
     display: none;
 }
 
@@ -420,29 +435,37 @@ li.wsp-list-item a.more-btn:hover {
     display: block;
 }
 
+li.wsp-list-item .more-actions-menu a,
 .more-actions-menu a {
     display: block !important;
-    padding: 8px 12px;
-    color: var(--text-popup) !important;
-    text-decoration: none;
-    font-size: 0.85em;
-    cursor: pointer;
-    line-height: 1.4;
-    height: auto;
-    width: auto;
+    padding: 8px 12px !important;
+    color: #fbfbfe !important;
+    text-decoration: none !important;
+    font-size: 0.85em !important;
+    cursor: pointer !important;
+    line-height: 1.4 !important;
+    height: auto !important;
+    width: auto !important;
+    min-height: 20px;
     opacity: 1 !important;
     visibility: visible !important;
-    position: relative;
-    background-color: transparent;
-    mask-image: none;
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    left: auto !important;
+    bottom: auto !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
 }
 
 .more-actions-menu a:hover {
-    background-color: var(--button-hover);
+    background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 .more-actions-menu a.destructive {
-    color: #f44336;
+    color: #ff6b6b !important;
 }
 
 /* ============================= */
