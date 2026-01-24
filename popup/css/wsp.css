@@ -421,12 +421,20 @@ li.wsp-list-item a.more-btn:hover {
 }
 
 .more-actions-menu a {
-    display: block;
+    display: block !important;
     padding: 8px 12px;
-    color: var(--text-popup);
+    color: var(--text-popup) !important;
     text-decoration: none;
     font-size: 0.85em;
     cursor: pointer;
+    line-height: 1.4;
+    height: auto;
+    width: auto;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: relative;
+    background-color: transparent;
+    mask-image: none;
 }
 
 .more-actions-menu a:hover {
