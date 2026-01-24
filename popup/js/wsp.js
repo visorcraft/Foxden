@@ -1999,16 +1999,36 @@ class WorkspaceUI {
 
       // Position the menu using fixed positioning
       const rect = moreBtn.getBoundingClientRect();
-      const menuHeight = 250; // Approximate menu height
+      const menuWidth = 160;
+      const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
 
-      // Position menu to the left of the button, opening downward by default
-      let top = rect.bottom + 4;
-      let left = rect.right - 160; // Menu width is ~160px
+      // Temporarily show menu off-screen to measure actual height
+      moreMenu.style.visibility = 'hidden';
+      moreMenu.style.display = 'block';
+      const menuHeight = moreMenu.offsetHeight;
+      moreMenu.style.display = '';
+      moreMenu.style.visibility = '';
 
-      // If menu would overflow bottom, open upward instead
-      if (top + menuHeight > viewportHeight) {
-        top = rect.top - menuHeight - 4;
+      // Position menu below the button by default
+      let top = rect.bottom + 4;
+      let left = rect.left;
+
+      // If menu would overflow right edge, align to right side
+      if (left + menuWidth > viewportWidth - 8) {
+        left = viewportWidth - menuWidth - 8;
+      }
+
+      // If menu would overflow bottom, try opening upward
+      if (top + menuHeight > viewportHeight - 8) {
+        const upwardTop = rect.top - menuHeight - 4;
+        // Only open upward if there's room above, otherwise keep below and let it scroll
+        if (upwardTop >= 8) {
+          top = upwardTop;
+        } else {
+          // Not enough room above or below - position at top with some padding
+          top = 8;
+        }
       }
 
       // Ensure menu doesn't go off-screen left
