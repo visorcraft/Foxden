@@ -2303,6 +2303,9 @@ class Brainer {
         await Brainer.updateTabList();
         await Brainer.updateBadge();
         setInitialized(true);
+      } else {
+        // Normal operation (browser already running) - just mark as initialized
+        setInitialized(true);
       }
     }
 
@@ -2489,6 +2492,15 @@ class Brainer {
 	      });
 	    }
 
+	    // Immediately check if we're already set up (extension reload scenario)
+	    // This prevents the popup from having to wait for onInstalled/onWindowCreated
+	    (async () => {
+	      const primaryWindowId = await WSPStorageManger.getPrimaryWindowId();
+	      if (primaryWindowId != null) {
+	        // Primary window exists - we're already initialized
+	        setInitialized(true);
+	      }
+	    })();
 	  }
 
   static async updateTabList(excludeTabId = null) {
