@@ -2757,18 +2757,7 @@ class Brainer {
     // Show target workspace tabs first (so we don't end up with an empty tab strip)
     await Brainer._safeTabsShow(targetTabIds);
 
-    // Hide every other unpinned tab in the window (including untracked ones)
-    const unpinnedTabIds = allTabs.filter(tab => !tab.pinned).map(tab => tab.id);
-    const tabIdsToHide = unpinnedTabIds.filter(id => !targetSet.has(id));
-
-    await Brainer._safeTabsHide(tabIdsToHide);
-    await Brainer._safeTabsUngroup(tabIdsToHide);
-
-    // Reset + restore groups for the target workspace
-    await Brainer._safeTabsUngroup(targetTabIds);
-    await Brainer._restoreWorkspaceGroups(workspace, targetSet);
-
-    // Activate requested tab (or lastActiveTabId or first workspace tab; allow pinned focus too)
+    // Determine which tab to activate
     const requested = Number(activeTabId);
     const lastActive = Number(workspace?.lastActiveTabId);
     let tabToActivate = null;
@@ -2781,12 +2770,25 @@ class Brainer {
       tabToActivate = targetTabIds[0];
     }
 
+    // IMPORTANT: Activate a tab in the target workspace BEFORE hiding other tabs.
+    // Firefox won't hide the currently active tab, so we must switch focus first.
     if (tabToActivate != null) {
       const ok = await Brainer._safeActivateTab(tabToActivate);
       if (!ok && targetTabIds.length > 0) {
         await Brainer._safeActivateTab(targetTabIds[0]);
       }
     }
+
+    // Now hide every other unpinned tab in the window (including untracked ones)
+    const unpinnedTabIds = allTabs.filter(tab => !tab.pinned).map(tab => tab.id);
+    const tabIdsToHide = unpinnedTabIds.filter(id => !targetSet.has(id));
+
+    await Brainer._safeTabsHide(tabIdsToHide);
+    await Brainer._safeTabsUngroup(tabIdsToHide);
+
+    // Reset + restore groups for the target workspace
+    await Brainer._safeTabsUngroup(targetTabIds);
+    await Brainer._restoreWorkspaceGroups(workspace, targetSet);
 
     return { targetTabIds };
   }
