@@ -971,6 +971,50 @@ class Brainer {
     await workspace._saveState();
     await WSPStorageManger.flushPending().catch(() => {});
 
+    // Check if we need to switch to another workspace or create a fallback tab
+    const allWorkspaces = await WSPStorageManger.getWorkspaces(windowId);
+    const remainingWorkspaces = allWorkspaces.filter(w => w.id !== id);
+    const allWindowTabs = await browser.tabs.query({ windowId });
+    const pinnedTabs = allWindowTabs.filter(t => t.pinned);
+    const tabsBeingDeleted = new Set(tabIds);
+    const remainingUnpinnedTabs = allWindowTabs.filter(t => !t.pinned && !tabsBeingDeleted.has(t.id));
+
+    // If deleting these tabs would close the window (no tabs left), create a fallback
+    let fallbackTabId = null;
+    if (remainingUnpinnedTabs.length === 0 && pinnedTabs.length === 0) {
+      const fallbackTab = await Brainer.withSuppressedTabTracking(async () => {
+        return await browser.tabs.create({ windowId, active: true });
+      });
+      fallbackTabId = fallbackTab.id;
+
+      if (remainingWorkspaces.length > 0) {
+        // Add the fallback tab to another workspace and activate it
+        const nextWsp = remainingWorkspaces.find(w => !w.suspended && !w.archived) || remainingWorkspaces[0];
+        nextWsp.tabs.push(fallbackTabId);
+        nextWsp.active = true;
+        await nextWsp._saveState();
+      } else {
+        // This is the last workspace - create a new one with the fallback tab
+        const newWspId = Date.now();
+        await Workspace.create(newWspId, {
+          id: newWspId,
+          name: Brainer.generateWspName(),
+          color: "",
+          pinned: false,
+          suspended: false,
+          active: true,
+          tabs: [fallbackTabId],
+          groups: [],
+          windowId,
+          lastActiveTabId: fallbackTabId
+        });
+      }
+    } else if (wasActive && remainingWorkspaces.length > 0) {
+      // Switch to another workspace before deleting
+      const nextWsp = remainingWorkspaces.find(w => !w.suspended && !w.archived) || remainingWorkspaces[0];
+      await Brainer.activateWsp(nextWsp.id, windowId, null);
+    }
+
     // Close tabs, then remove workspace.
     try {
       await browser.tabs.remove(tabIds);
@@ -1190,6 +1234,110 @@ class Brainer {
       return { success: true, oldWindowId: oldId, newWindowId: newId };
     } catch (e) {
       Brainer.recordError("rebindPrimaryWindow", e);
+      return { success: false, error: e?.message ? String(e.message) : String(e) };
+    }
+  }
+
+  static async claimPrimaryWindow(windowId) {
+    const newId = Number(windowId);
+    if (!Number.isFinite(newId)) {
+      return { success: false, error: "Invalid windowId" };
+    }
+
+    try {
+      // Check if there's an old window ID to migrate from
+      const oldWindowId = await WSPStorageManger.getPrimaryWindowLastId();
+
+      if (oldWindowId != null) {
+        // Migrate workspaces from the old window
+        const oldWorkspaces = await WSPStorageManger.getWorkspaces(oldWindowId);
+
+        if (oldWorkspaces.length > 0) {
+          // Get current tabs for mapping
+          const currentTabs = await browser.tabs.query({ windowId: newId, pinned: false });
+          const currentTabIds = currentTabs.map(tab => tab.id);
+
+          await WSPStorageManger.setPrimaryWindowId(newId);
+
+          // Migrate each workspace to the new window
+          for (const wsp of oldWorkspaces) {
+            wsp.windowId = newId;
+            // Clear old tab IDs since they're no longer valid after restart
+            wsp.tabs = [];
+            wsp.groups = [];
+            wsp.lastActiveTabId = null;
+            await wsp._saveState();
+            await WSPStorageManger.addWsp(wsp.id, newId);
+          }
+
+          // Remove old window's workspace list
+          await WSPStorageManger.removeWindowWorkspaceIds(oldWindowId);
+
+          // Migrate folders
+          const oldFolders = await WSPStorageManger.getFolders(oldWindowId);
+          if (oldFolders && oldFolders.length > 0) {
+            await WSPStorageManger.saveFolders(newId, oldFolders);
+            await WSPStorageManger.saveFolders(oldWindowId, []);
+          }
+
+          // Assign current tabs to the active workspace (or first workspace)
+          let activeWsp = oldWorkspaces.find(w => w.active);
+          if (!activeWsp && oldWorkspaces.length > 0) {
+            activeWsp = oldWorkspaces[0];
+            activeWsp.active = true;
+          }
+
+          if (activeWsp && currentTabIds.length > 0) {
+            activeWsp.tabs = currentTabIds;
+            activeWsp.lastActiveTabId = currentTabIds[0];
+            await activeWsp._saveState();
+          }
+
+          await WSPStorageManger.removePrimaryWindowLastId();
+          await WSPStorageManger.flushPending().catch(() => {});
+          await Brainer.refreshTabMenu();
+          await Brainer.updateBadge();
+
+          return { success: true, windowId: newId, migrated: true };
+        }
+      }
+
+      // No old workspaces to migrate - set up fresh
+      await WSPStorageManger.setPrimaryWindowId(newId);
+      await WSPStorageManger.removePrimaryWindowLastId();
+
+      // Check if there's already an active workspace for this window
+      const workspaces = await WSPStorageManger.getWorkspaces(newId);
+      let activeWsp = workspaces.find(w => w.active) || null;
+
+      if (!activeWsp) {
+        // Create a default workspace with current tabs
+        const currentTabs = await browser.tabs.query({ windowId: newId, pinned: false });
+        const currentTabIds = currentTabs.map(tab => tab.id);
+
+        const wspId = Date.now();
+        const wsp = {
+          id: wspId,
+          name: Brainer.generateWspName(),
+          color: "",
+          pinned: false,
+          suspended: false,
+          active: true,
+          tabs: currentTabIds,
+          groups: [],
+          windowId: newId,
+          lastActiveTabId: currentTabIds[0] || null
+        };
+        await Workspace.create(wspId, wsp);
+      }
+
+      await WSPStorageManger.flushPending().catch(() => {});
+      await Brainer.refreshTabMenu();
+      await Brainer.updateBadge();
+
+      return { success: true, windowId: newId };
+    } catch (e) {
+      Brainer.recordError("claimPrimaryWindow", e);
       return { success: false, error: e?.message ? String(e.message) : String(e) };
     }
   }
@@ -2089,6 +2237,13 @@ class Brainer {
 	    }, { properties: ["url", "title", "status"] });
 
     browser.tabs.onActivated.addListener(async (activeInfo) => {
+      if (Brainer._isTabTrackingSuppressed()) {
+        return;
+      }
+      if (await WSPStorageManger.getPrimaryWindowId() !== activeInfo.windowId) {
+        return;
+      }
+
       const workspaces = await WSPStorageManger.getWorkspaces(activeInfo.windowId);
       const activeWsp = workspaces.find(wsp => wsp.active);
 

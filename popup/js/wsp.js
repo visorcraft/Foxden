@@ -535,9 +535,8 @@ class WorkspaceUI {
         // If primary window doesn't exist, auto-claim this window
         if (!primaryWindowExists) {
           try {
-            const result = await this._callBackgroundTask("rebindPrimaryWindow", {
-              oldWindowId: primaryWindowId,
-              newWindowId: this.currentWindowId
+            const result = await this._callBackgroundTask("claimPrimaryWindow", {
+              windowId: this.currentWindowId
             });
             if (result?.success) {
               location.reload();
@@ -564,10 +563,15 @@ class WorkspaceUI {
           btn.disabled = true;
           btn.textContent = "Switching...";
           try {
-            const result = await this._callBackgroundTask("rebindPrimaryWindow", {
-              oldWindowId: primaryWindowId,
-              newWindowId: this.currentWindowId
-            });
+            // Use claimPrimaryWindow if the other window is gone, rebindPrimaryWindow if it exists
+            const result = primaryWindowExists
+              ? await this._callBackgroundTask("rebindPrimaryWindow", {
+                  oldWindowId: primaryWindowId,
+                  newWindowId: this.currentWindowId
+                })
+              : await this._callBackgroundTask("claimPrimaryWindow", {
+                  windowId: this.currentWindowId
+                });
             if (result?.success) {
               location.reload();
             } else {
@@ -596,6 +600,27 @@ class WorkspaceUI {
     });
 
     this.workspaces.push(...await this.getWorkspaces(this.currentWindowId));
+
+    // If no workspaces exist, create a default one with current tabs
+    if (this.workspaces.length === 0) {
+      const currentTabs = await browser.tabs.query({ windowId: this.currentWindowId, pinned: false });
+      const currentTabIds = currentTabs.map(t => t.id);
+
+      const wspId = Date.now();
+      await this._callBackgroundTask("createWorkspace", {
+        id: wspId,
+        name: "Unnamed Workspace",
+        color: "",
+        active: true,
+        tabs: currentTabIds,
+        windowId: this.currentWindowId
+      });
+
+      // Reload workspaces after creating
+      this.workspaces.length = 0;
+      this.workspaces.push(...await this.getWorkspaces(this.currentWindowId));
+    }
+
     await this._loadAllTabs();
 
     // Load custom order
