@@ -1,6 +1,8 @@
 async function applyTheme() {
   try {
-    const { colors = {}, properties = {} } = await browser.theme.getCurrent();
+    const theme = await browser.theme.getCurrent();
+    const colors = theme?.colors || {};
+    const properties = theme?.properties || {};
 
     // Mappings: theme.colors → CSS-Variablen
     const map = {
@@ -519,6 +521,9 @@ class WorkspaceUI {
         return;
       }
 
+      // Debug: log window IDs to help diagnose popup vs sidebar issues
+      console.log("[Foxden] currentWindowId:", this.currentWindowId, "primaryWindowId:", primaryWindowId);
+
       if (primaryWindowId !== this.currentWindowId) {
         // Check if the primary window actually exists - it may be stale after reinstall
         let primaryWindowExists = false;
@@ -547,84 +552,130 @@ class WorkspaceUI {
           }
         }
 
-        document.getElementById("createNewWsp").style.display = "none";
-        document.querySelector(".search-container").style.display = "none";
-        const wspList = document.getElementById("wsp-list");
-        wspList.innerHTML = `
-          <li class='no-wsp'>
-            <span>Workspaces are managed in another window.</span>
-            <button id="makePrimaryBtn" class="footer" style="margin-top: 16px; padding: 8px 16px; background-color: var(--button-primary); color: var(--button-primary-text); border: none; border-radius: 4px; cursor: pointer;">
-              Use this window instead
-            </button>
-            <small style="margin-top: 8px; opacity: 0.7;">This will move your workspaces here.</small>
-          </li>`;
-        document.getElementById("makePrimaryBtn").addEventListener("click", async () => {
-          const btn = document.getElementById("makePrimaryBtn");
-          btn.disabled = true;
-          btn.textContent = "Switching...";
-          try {
-            // Use claimPrimaryWindow if the other window is gone, rebindPrimaryWindow if it exists
-            const result = primaryWindowExists
-              ? await this._callBackgroundTask("rebindPrimaryWindow", {
-                  oldWindowId: primaryWindowId,
-                  newWindowId: this.currentWindowId
-                })
-              : await this._callBackgroundTask("claimPrimaryWindow", {
-                  windowId: this.currentWindowId
-                });
-            if (result?.success) {
-              location.reload();
-            } else {
+        // Check if there's only one browser window - if so, popup and sidebar should both work
+        const allWindows = await browser.windows.getAll({ windowTypes: ["normal"] });
+        const hasMultipleWindows = allWindows.length > 1;
+
+        if (primaryWindowExists && hasMultipleWindows) {
+          // Truly different windows - show the "managed in another window" UI
+          document.getElementById("createNewWsp").style.display = "none";
+          document.querySelector(".search-container").style.display = "none";
+          const wspList = document.getElementById("wsp-list");
+          wspList.innerHTML = `
+            <li class='no-wsp'>
+              <span>Workspaces are managed in another window.</span>
+              <button id="makePrimaryBtn" class="footer" style="margin-top: 16px; padding: 8px 16px; background-color: var(--button-primary); color: var(--button-primary-text); border: none; border-radius: 4px; cursor: pointer;">
+                Use this window instead
+              </button>
+              <small style="margin-top: 8px; opacity: 0.7;">This will move your workspaces here.</small>
+            </li>`;
+          document.getElementById("makePrimaryBtn").addEventListener("click", async () => {
+            const btn = document.getElementById("makePrimaryBtn");
+            btn.disabled = true;
+            btn.textContent = "Switching...";
+            try {
+              const result = await this._callBackgroundTask("claimPrimaryWindow", {
+                windowId: this.currentWindowId
+              });
+              if (result?.success) {
+                location.reload();
+              } else {
+                btn.textContent = "Failed - try again";
+                btn.disabled = false;
+              }
+            } catch (e) {
               btn.textContent = "Failed - try again";
               btn.disabled = false;
             }
-          } catch (e) {
-            btn.textContent = "Failed - try again";
-            btn.disabled = false;
-          }
-        });
-        return;
+          });
+          return;
+        }
+
+        // Single window but IDs don't match (popup vs sidebar quirk) - use primaryWindowId for workspaces
+        if (primaryWindowExists && !hasMultipleWindows) {
+          // Store the workspace window ID separately - don't change currentWindowId
+          // as it's needed for tab operations
+          this.workspaceWindowId = primaryWindowId;
+          console.log("[Foxden] Single window mode - workspaceWindowId:", primaryWindowId, "currentWindowId:", this.currentWindowId);
+        }
+      }
+
+      // Default workspaceWindowId to currentWindowId if not set
+      if (!this.workspaceWindowId) {
+        this.workspaceWindowId = this.currentWindowId;
       }
 
     // Popup-only command helpers (triggered from background commands)
-    browser.runtime.onMessage.addListener(async (message) => {
+    // IMPORTANT: Must NOT be async, or it will return Promise<undefined> for messages
+    // it doesn't handle, which interferes with background script message handlers.
+    browser.runtime.onMessage.addListener((message) => {
+      // Only handle messages with type we care about - return nothing for others
+      // so background script handlers can respond
       if (message?.type === "wsp-focus-search") {
-        await browser.storage.local.remove("wsp-focus-search-mode").catch(() => {});
+        browser.storage.local.remove("wsp-focus-search-mode").catch(() => {});
         this._focusSearchInput();
+        return; // Don't return a Promise
       }
 
       if (message?.type === "wsp-create-workspace") {
-        await browser.storage.local.remove("wsp-create-workspace-mode").catch(() => {});
-        await this._promptCreateWorkspace();
+        browser.storage.local.remove("wsp-create-workspace-mode").catch(() => {});
+        this._promptCreateWorkspace();
+        return; // Don't return a Promise
       }
+
+      // For any other message, return undefined (not a Promise) so background handlers work
     });
 
-    this.workspaces.push(...await this.getWorkspaces(this.currentWindowId));
+    console.log("[Foxden] About to load workspaces with workspaceWindowId:", this.workspaceWindowId, "currentWindowId:", this.currentWindowId);
+    this.workspaces.push(...await this.getWorkspaces(this.workspaceWindowId));
 
     // If no workspaces exist, create a default one with current tabs
+    // Use a lock to prevent race conditions if both popup and sidebar open at once
     if (this.workspaces.length === 0) {
-      const currentTabs = await browser.tabs.query({ windowId: this.currentWindowId, pinned: false });
-      const currentTabIds = currentTabs.map(t => t.id);
+      const lockKey = "foxden-creating-workspace";
+      const lock = await browser.storage.local.get(lockKey);
 
-      const wspId = Date.now();
-      await this._callBackgroundTask("createWorkspace", {
-        id: wspId,
-        name: "Unnamed Workspace",
-        color: "",
-        active: true,
-        tabs: currentTabIds,
-        windowId: this.currentWindowId
-      });
+      if (!lock[lockKey]) {
+        try {
+          // Set lock
+          await browser.storage.local.set({ [lockKey]: Date.now() });
 
-      // Reload workspaces after creating
-      this.workspaces.length = 0;
-      this.workspaces.push(...await this.getWorkspaces(this.currentWindowId));
+          // Double-check workspaces are still empty
+          const recheckWorkspaces = await this.getWorkspaces(this.workspaceWindowId);
+          if (recheckWorkspaces.length === 0) {
+            const currentTabs = await browser.tabs.query({ windowId: this.currentWindowId, pinned: false });
+            const currentTabIds = currentTabs.map(t => t.id);
+
+            const wspId = Date.now();
+            await this._callBackgroundTask("createWorkspace", {
+              id: wspId,
+              name: "Unnamed Workspace",
+              color: "",
+              active: true,
+              tabs: currentTabIds,
+              windowId: this.workspaceWindowId
+            });
+          }
+
+          // Reload workspaces after creating
+          this.workspaces.length = 0;
+          this.workspaces.push(...await this.getWorkspaces(this.workspaceWindowId));
+        } finally {
+          // Release lock
+          await browser.storage.local.remove(lockKey).catch(() => {});
+        }
+      } else {
+        // Another instance is creating, wait and reload
+        await new Promise(r => setTimeout(r, 500));
+        this.workspaces.length = 0;
+        this.workspaces.push(...await this.getWorkspaces(this.workspaceWindowId));
+      }
     }
 
     await this._loadAllTabs();
 
     // Load custom order
-    this.customOrder = await this._callBackgroundTask("getWorkspaceOrder", { windowId: this.currentWindowId });
+    this.customOrder = await this._callBackgroundTask("getWorkspaceOrder", { windowId: this.workspaceWindowId });
 
     // Load settings
     const settings = await this._callBackgroundTask("getSettings");
@@ -642,7 +693,7 @@ class WorkspaceUI {
     }
 
     // Load folders
-    this.folders = await this._callBackgroundTask("getFolders", { windowId: this.currentWindowId });
+    this.folders = await this._callBackgroundTask("getFolders", { windowId: this.workspaceWindowId });
     const foldersErr = this._getBackgroundError(this.folders);
     if (foldersErr) {
       await this._enterSafeMode({ message: "Failed to load folders.", details: foldersErr });
@@ -1274,16 +1325,26 @@ class WorkspaceUI {
     this._setSearchResults(results, query, { emptyMessage: "No commands found" });
   }
 
-  async getWorkspaces(currentWindowId) {
-    const result = await this._callBackgroundTask("getWorkspaces", { windowId: currentWindowId });
+  async getWorkspaces(windowId) {
+    console.log("[Foxden] getWorkspaces called with windowId:", windowId);
+    if (windowId == null) {
+      console.warn("[Foxden] getWorkspaces called with null/undefined windowId, using currentWindowId");
+      windowId = this.currentWindowId;
+    }
+    console.log("[Foxden] Calling background task getWorkspaces...");
+    const result = await this._callBackgroundTask("getWorkspaces", { windowId });
+    console.log("[Foxden] Background task returned:", result);
     const err = this._getBackgroundError(result);
     if (err) {
+      console.error("[Foxden] Background error:", err);
       throw new Error(err);
     }
     if (!Array.isArray(result)) {
-      throw new Error("Invalid workspaces response");
+      console.error("[Foxden] Invalid workspaces response:", result, "for windowId:", windowId);
+      throw new Error(`Invalid workspaces response for windowId ${windowId}: ${JSON.stringify(result)}`);
     }
     result.sort((a, b) => a.name.localeCompare(b.name));
+    console.log("[Foxden] Returning", result.length, "workspaces");
     return result;
   }
 
