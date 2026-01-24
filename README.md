@@ -22,24 +22,30 @@ Ever find yourself drowning in 50+ tabs? We've been there. Foxden gives your tab
 
 ## See It In Action
 
-| ![Create and manage workspaces](assets/screenshots/screenshot1.png) | ![Name your workspaces](assets/screenshots/screenshot2.png) | ![Adapts to browser theme](assets/screenshots/screenshot3.png) |
+| ![Your workspaces, always at paw](assets/screenshots/screenshot1.png) | ![Make it yours](assets/screenshots/screenshot2.png) | ![Tweak to perfection](assets/screenshots/screenshot3.png) |
 |:---:|:---:|:---:|
-| Create and manage workspaces | Name your workspaces | Adapts to your theme |
+| Your workspaces live in the sidebar — one click away from tab nirvana | Rename workspaces AND pick a color? It's like naming your pets, but productive | Settings for the control freaks (we say that with love) |
 
-| ![Create tab groups within workspaces](assets/screenshots/screenshot4.png) | ![Move tabs between workspaces](assets/screenshots/screenshot5.png) |
+| ![Automate your chaos](assets/screenshots/screenshot4.png) | ![Tabs go where you tell them](assets/screenshots/screenshot5.png) |
 |:---:|:---:|
-| Tab groups within workspaces | Move tabs with right-click |
+| Folder rules: let Foxden sort your tabs automatically. Work smarter, not harder | Right-click any tab → send it packing to another workspace. Bye, tab!
 
 ---
 
 ## Get Started
 
-### Quick Install
+### Install from Mozilla Add-ons (Recommended)
 
-1. Grab [`Foxden-x.x.x.xpi`](https://github.com/visorcraft/Foxden/releases) from the releases page
-2. In Firefox, head to `about:addons`
+**[Get Foxden on Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/foxden/)** — One click, auto-updates, the works.
+
+### Manual Install
+
+Prefer to live on the edge? Grab the latest from [GitHub Releases](https://github.com/visorcraft/Foxden/releases):
+
+1. Download `Foxden-x.x.x.xpi`
+2. In Firefox, go to `about:addons`
 3. Click the gear icon → **"Install Add-on From File..."**
-4. Select the downloaded file and you're in!
+4. Select the file and you're in!
 
 **Requirements:** Firefox 147 or newer
 

@@ -324,7 +324,7 @@ li.wsp-list-item a.edit-btn {
 }
 
 li.wsp-list-item a.rename-btn {
-    right: 135px;
+    right: 160px;
     width: 20px;
     height: 20px;
     display: inline-block;
@@ -336,7 +336,7 @@ li.wsp-list-item a.rename-btn {
 }
 
 li.wsp-list-item a.pin-btn {
-    right: 110px;
+    right: 135px;
     width: 20px;
     height: 20px;
     display: inline-block;
@@ -354,7 +354,7 @@ li.wsp-list-item a.pin-btn.pinned {
 }
 
 li.wsp-list-item a.suspend-btn {
-    right: 60px;
+    right: 85px;
     width: 20px;
     height: 20px;
     display: inline-block;
@@ -489,7 +489,7 @@ li.wsp-list-item:hover .drag-handle {
 }
 
 li.wsp-list-item a.copy-urls-btn {
-    right: 85px;
+    right: 110px;
     width: 20px;
     height: 20px;
     display: inline-block;
@@ -505,7 +505,7 @@ li.wsp-list-item a.copy-urls-btn.copied {
 }
 
 li.wsp-list-item a.duplicate-btn {
-    right: 35px;
+    right: 60px;
     width: 20px;
     height: 20px;
     display: inline-block;

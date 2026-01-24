@@ -31,11 +31,13 @@ if (browser) {
       }
 
       await Workspace.update(message.wspId, updates);
+      await WSPStorageManger.flushPending().catch(() => {}); // Ensure write is persisted immediately
       await Brainer.updateBadge();
       return { success: true };
     },
     togglePinWorkspace: async (message) => {
       await Workspace.update(message.wspId, { pinned: message.pinned });
+      await WSPStorageManger.flushPending().catch(() => {});
       return { success: true };
     },
     suspendWorkspace: async (message) => Brainer.suspendWorkspace(message.wspId),
