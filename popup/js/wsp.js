@@ -514,6 +514,16 @@ class WorkspaceUI {
     try {
       this.currentWindowId = (await browser.windows.getCurrent()).id;
 
+      // Wait for background script to finish initializing (max 5 seconds)
+      // This prevents race conditions during browser startup
+      const maxWaitMs = 5000;
+      const startTime = Date.now();
+      while (Date.now() - startTime < maxWaitMs) {
+        const isInit = await this._callBackgroundTask("isInitialized");
+        if (isInit === true) break;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
       const primaryWindowId = await this._callBackgroundTask("getPrimaryWindowId");
       const primaryWindowErr = this._getBackgroundError(primaryWindowId);
       if (primaryWindowErr) {
@@ -4063,6 +4073,7 @@ class WorkspaceUI {
 
           // Create tabs for this workspace (preserve indices for group mapping)
           const tabIdsByIndex = [];
+          const tabUrls = {}; // Map tab ID -> URL for persistence after restart
            for (const tabData of (wspData.tabs || [])) {
              const url = tabData?.url;
              if (!url) {
@@ -4078,6 +4089,7 @@ class WorkspaceUI {
                 windowId
               });
               tabIdsByIndex.push(newTab.id);
+              tabUrls[newTab.id] = url; // Save URL for this tab ID
             } catch (e) {
               tabIdsByIndex.push(null);
               failedTabs++;
@@ -4127,6 +4139,7 @@ class WorkspaceUI {
             tags,
             active: false,
             tabs: tabIds,
+            tabUrls, // Save tab URLs for persistence after browser restart
             groups,
             windowId: windowId
           };

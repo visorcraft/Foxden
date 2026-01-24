@@ -9,7 +9,12 @@ class Brainer {
   static _undoTtlMs = 20000;
   static _autoArchiveInterval = null;
   static _ruleCandidateTabs = new Map();
+  static _initialized = false;
   static _wakingSnoozeIds = new Set();
+
+  static isInitialized() {
+    return Brainer._initialized;
+  }
 
   static suppressTabTracking(ms = 60000) {
     const duration = Number(ms);
@@ -1245,52 +1250,100 @@ class Brainer {
     }
 
     try {
+      console.log("[Foxden] claimPrimaryWindow called with windowId:", newId);
+
       // Check if there's an old window ID to migrate from
       const oldWindowId = await WSPStorageManger.getPrimaryWindowLastId();
+      console.log("[Foxden] claimPrimaryWindow: oldWindowId from storage:", oldWindowId);
 
       if (oldWindowId != null) {
         // Migrate workspaces from the old window
         const oldWorkspaces = await WSPStorageManger.getWorkspaces(oldWindowId);
+        console.log("[Foxden] claimPrimaryWindow: found", oldWorkspaces.length, "workspaces from old window");
 
         if (oldWorkspaces.length > 0) {
-          // Get current tabs for mapping
+          // Get current tabs for URL-based matching
           const currentTabs = await browser.tabs.query({ windowId: newId, pinned: false });
           const currentTabIds = currentTabs.map(tab => tab.id);
 
+          // Build URL-to-tab-ID mapping for matching tabs
+          const urlToNewTabId = {};
+          for (const tab of currentTabs) {
+            if (tab.url) {
+              urlToNewTabId[tab.url] = tab.id;
+            }
+          }
+
           await WSPStorageManger.setPrimaryWindowId(newId);
+
+          const sameWindow = oldWindowId === newId;
+          const assignedTabIds = new Set();
 
           // Migrate each workspace to the new window
           for (const wsp of oldWorkspaces) {
             wsp.windowId = newId;
-            // Clear old tab IDs since they're no longer valid after restart
-            wsp.tabs = [];
-            wsp.groups = [];
-            wsp.lastActiveTabId = null;
+
+            if (sameWindow) {
+              // Same window - tab IDs are still valid, keep them
+              // Just filter out any that no longer exist
+              const validTabIds = wsp.tabs.filter(tabId => currentTabIds.includes(tabId));
+              wsp.tabs = validTabIds;
+              validTabIds.forEach(id => assignedTabIds.add(id));
+            } else {
+              // Different window - use URL-based matching
+              const tabUrls = wsp.tabUrls || {};
+              const newTabIds = [];
+
+              for (const oldTabId of wsp.tabs) {
+                const url = tabUrls[oldTabId];
+                if (url && urlToNewTabId[url]) {
+                  const newTabId = urlToNewTabId[url];
+                  if (!assignedTabIds.has(newTabId)) {
+                    newTabIds.push(newTabId);
+                    assignedTabIds.add(newTabId);
+                  }
+                }
+              }
+
+              wsp.tabs = newTabIds;
+              wsp.groups = []; // Groups need to be rebuilt
+              wsp.lastActiveTabId = newTabIds[0] || null;
+            }
+
             await wsp._saveState();
-            await WSPStorageManger.addWsp(wsp.id, newId);
+            if (!sameWindow) {
+              await WSPStorageManger.addWsp(wsp.id, newId);
+            }
           }
 
-          // Remove old window's workspace list
-          await WSPStorageManger.removeWindowWorkspaceIds(oldWindowId);
+          // Remove old window's workspace list only if window ID changed
+          if (!sameWindow) {
+            await WSPStorageManger.removeWindowWorkspaceIds(oldWindowId);
+          }
 
           // Migrate folders
           const oldFolders = await WSPStorageManger.getFolders(oldWindowId);
           if (oldFolders && oldFolders.length > 0) {
             await WSPStorageManger.saveFolders(newId, oldFolders);
-            await WSPStorageManger.saveFolders(oldWindowId, []);
+            if (!sameWindow) {
+              await WSPStorageManger.saveFolders(oldWindowId, []);
+            }
           }
 
-          // Assign current tabs to the active workspace (or first workspace)
+          // Add unassigned tabs to the active workspace
           let activeWsp = oldWorkspaces.find(w => w.active);
           if (!activeWsp && oldWorkspaces.length > 0) {
             activeWsp = oldWorkspaces[0];
             activeWsp.active = true;
           }
 
-          if (activeWsp && currentTabIds.length > 0) {
-            activeWsp.tabs = currentTabIds;
-            activeWsp.lastActiveTabId = currentTabIds[0];
-            await activeWsp._saveState();
+          if (activeWsp) {
+            const unassignedTabs = currentTabIds.filter(id => !assignedTabIds.has(id));
+            if (unassignedTabs.length > 0) {
+              activeWsp.tabs.push(...unassignedTabs);
+              activeWsp.lastActiveTabId = activeWsp.lastActiveTabId || activeWsp.tabs[0];
+              await activeWsp._saveState();
+            }
           }
 
           await WSPStorageManger.removePrimaryWindowLastId();
@@ -1963,7 +2016,9 @@ class Brainer {
   }
 
   static registerListeners() {
-    let initialized = false;
+    // Use the static property instead of local variable for visibility from popup
+    const setInitialized = (value) => { Brainer._initialized = value; };
+    const isInitialized = () => Brainer._initialized;
 
     // initial set up when first installed
     browser.runtime.onInstalled.addListener(async (details) => {
@@ -1986,12 +2041,20 @@ class Brainer {
 
         await Brainer.createWorkspace(wsp);
       }
-      initialized = true;
+      setInitialized(true);
     });
 
-    async function onWindowCreated(window) {
-      // initial startup
-      if (await WSPStorageManger.getPrimaryWindowId() == null && await WSPStorageManger.getPrimaryWindowLastId() == null) {
+    async function onWindowCreated(window, isBrowserStartup = false) {
+      console.log("[Foxden] onWindowCreated called, windowId:", window.id, "isBrowserStartup:", isBrowserStartup);
+
+      const storedPrimaryWindowId = await WSPStorageManger.getPrimaryWindowId();
+      const storedLastWindowId = await WSPStorageManger.getPrimaryWindowLastId();
+
+      console.log("[Foxden] storedPrimaryWindowId:", storedPrimaryWindowId, "storedLastWindowId:", storedLastWindowId);
+
+      // initial startup (fresh install)
+      if (storedPrimaryWindowId == null && storedLastWindowId == null) {
+        console.log("[Foxden] Fresh install detected");
         await WSPStorageManger.setPrimaryWindowId(window.id);
 
         const wsp = {
@@ -2003,28 +2066,50 @@ class Brainer {
         };
 
         await Brainer.createWorkspace(wsp);
+        setInitialized(true);
         return;
       }
 
-      // browser restart
-      if (await WSPStorageManger.getPrimaryWindowId() == null) {
-        await WSPStorageManger.setPrimaryWindowId(window.id);
+      // Browser restart - need to remap tab IDs
+      // This happens when:
+      // 1. primaryWindowId is null (shutdown saved primaryWindowLastId), OR
+      // 2. This is a browser startup (isBrowserStartup=true) and we need to remap tabs
+      const needsTabRemapping = storedPrimaryWindowId == null || isBrowserStartup;
+
+      if (needsTabRemapping) {
+        console.log("[Foxden] Browser restart detected, starting migration...");
+
+        // Use immediate write to prevent race with popup
+        await browser.storage.local.set({ "primary-window-id": window.id });
+
         const newTabs = await browser.tabs.query({windowId: window.id});
-        const oldTabs = await WSPStorageManger.getWindowTabIndexMapping();
 
-        const tabIndexMapping = {};
+        // Build URL-to-new-tab-ID mapping for matching tabs after restart
+        // Tab IDs change on restart, but URLs remain the same
+        const urlToNewTabId = {};
         for (const tab of newTabs) {
-          const oldTab = oldTabs.find(t => t.index === tab.index);
-
-          if (oldTab) {
-            tabIndexMapping[oldTab.id] = tab.id;
+          if (tab.url) {
+            // Use the URL as key - if multiple tabs have same URL, last one wins
+            // (this is rare and acceptable)
+            urlToNewTabId[tab.url] = tab.id;
           }
         }
+        console.log("[Foxden] URL mapping created for", Object.keys(urlToNewTabId).length, "tabs");
 
-        console.log(tabIndexMapping);
+        // Get workspaces from the old window ID
+        // If primaryWindowLastId is set (clean shutdown), use that
+        // Otherwise, if this is a browser startup with same window ID, use storedPrimaryWindowId
+	        const oldWindowId = storedLastWindowId || storedPrimaryWindowId;
+	        console.log("[Foxden] Old window ID for migration:", oldWindowId, "(storedLastWindowId:", storedLastWindowId, "storedPrimaryWindowId:", storedPrimaryWindowId, ")");
 
-	        const oldWindowId = await WSPStorageManger.getPrimaryWindowLastId();
+	        if (oldWindowId == null) {
+	          console.log("[Foxden] No old window ID found, skipping migration");
+	          setInitialized(true);
+	          return;
+	        }
+
 	        const workspaces = await WSPStorageManger.getWorkspaces(oldWindowId);
+	        console.log("[Foxden] Found", workspaces.length, "workspaces to migrate from window", oldWindowId);
 
 	        // Migrate snoozed payload windowIds to the new window on restart.
 	        try {
@@ -2051,10 +2136,68 @@ class Brainer {
 	          }
 	        } catch (_) {}
 
-	        await WSPStorageManger.destroyWindow(oldWindowId);
+        // Only destroy old window data if the window ID actually changed
+        // If Firefox reused the same window ID, we just need to update tab IDs in place
+        const windowIdChanged = oldWindowId !== window.id;
+        console.log("[Foxden] Window ID changed:", windowIdChanged, "(old:", oldWindowId, "new:", window.id, ")");
+
+        if (windowIdChanged) {
+	          await WSPStorageManger.destroyWindow(oldWindowId);
+        }
 
         let activeWspId = null;
+        const assignedTabIds = new Set(); // Track which tabs have been assigned to workspaces
+
         for (const wsp of workspaces) {
+          // Remap tab IDs using URL matching
+          // Each workspace stores tabUrls: { oldTabId: url }
+          const tabUrls = wsp.tabUrls || {};
+          const newTabIds = [];
+
+          for (const oldTabId of wsp.tabs) {
+            const url = tabUrls[oldTabId];
+            if (url && urlToNewTabId[url]) {
+              const newTabId = urlToNewTabId[url];
+              // Only assign each tab to one workspace (first match wins)
+              if (!assignedTabIds.has(newTabId)) {
+                newTabIds.push(newTabId);
+                assignedTabIds.add(newTabId);
+              }
+            }
+          }
+
+          // Remap group tab IDs using URL matching
+          const newGroups = [];
+          for (const group of (wsp.groups || [])) {
+            const groupTabs = [];
+            for (const oldTabId of (group.tabs || [])) {
+              const url = tabUrls[oldTabId];
+              if (url && urlToNewTabId[url]) {
+                const newTabId = urlToNewTabId[url];
+                if (newTabIds.includes(newTabId)) {
+                  groupTabs.push(newTabId);
+                }
+              }
+            }
+            if (groupTabs.length > 0) {
+              newGroups.push({
+                title: group.title,
+                color: group.color,
+                collapsed: group.collapsed,
+                tabs: groupTabs
+              });
+            }
+          }
+
+          // Remap lastActiveTabId using URL
+          let newLastActiveTabId = null;
+          if (wsp.lastActiveTabId && tabUrls[wsp.lastActiveTabId]) {
+            const lastActiveUrl = tabUrls[wsp.lastActiveTabId];
+            if (lastActiveUrl && urlToNewTabId[lastActiveUrl]) {
+              newLastActiveTabId = urlToNewTabId[lastActiveUrl];
+            }
+          }
+
 		          const newWsp = {
 		            id: wsp.id,
 		            name: wsp.name,
@@ -2066,41 +2209,69 @@ class Brainer {
 		            snoozedUntil: wsp.snoozedUntil == null ? null : Number(wsp.snoozedUntil),
 		            lastActivatedAt: Number.isFinite(Number(wsp.lastActivatedAt)) ? Number(wsp.lastActivatedAt) : Date.now(),
 		            tags: Array.isArray(wsp.tags) ? wsp.tags : [],
-		            tabs: [],
-		            groups: wsp.groups,
+		            tabs: newTabIds,
+		            groups: newGroups,
 	            windowId: window.id,
-	            lastActiveTabId: tabIndexMapping[wsp.lastActiveTabId] || null
+	            lastActiveTabId: newLastActiveTabId
 	          };
 
           if (wsp.active) {
             activeWspId = wsp.id;
           }
 
-          for (const tabId of wsp.tabs) {
-            if (tabIndexMapping[tabId]) {
-              newWsp.tabs.push(tabIndexMapping[tabId]);
-            }
-          }
+          console.log("[Foxden] Migrating workspace:", wsp.name, "tabs:", wsp.tabs.length, "->", newTabIds.length);
 
-          for (const group of newWsp.groups) {
-            const oldTabs = group.tabs;
-            group.tabs = [];
-            for (const tabId of oldTabs) {
-              if (tabIndexMapping[tabId]) {
-                group.tabs.push(tabIndexMapping[tabId]);
-              }
-            }
+          if (windowIdChanged) {
+            // Window ID changed - create new workspace entry
+            await Workspace.create(newWsp.id, newWsp);
+          } else {
+            // Window ID same - just update the workspace state with new tab IDs
+            await WSPStorageManger.saveWspState(newWsp.id, newWsp);
           }
-          await Workspace.create(newWsp.id, newWsp);
         }
 
-    for (const tab of newTabs) {
-      if (!tab.pinned) {
-            // method takes care of checking if it's not already present in any workspace
+        // If no workspaces were found/migrated, create a default workspace with all current tabs
+        if (workspaces.length === 0) {
+          console.log("[Foxden] No workspaces found to migrate, creating default workspace");
+          const currentTabs = await browser.tabs.query({ windowId: window.id, pinned: false });
+          const currentTabIds = currentTabs.map(tab => tab.id);
+
+          const wspId = Date.now();
+          const wsp = {
+            id: wspId,
+            name: Brainer.generateWspName(),
+            color: "",
+            pinned: false,
+            suspended: false,
+            active: true,
+            tabs: currentTabIds,
+            groups: [],
+            windowId: window.id,
+            lastActiveTabId: currentTabIds[0] || null
+          };
+          await Workspace.create(wspId, wsp);
+          activeWspId = wspId;
+          currentTabIds.forEach(id => assignedTabIds.add(id));
+        }
+
+        // Flush workspace changes immediately
+        await WSPStorageManger.flushPending().catch(() => {});
+        console.log("[Foxden] Workspace migration complete, flushed to storage");
+        console.log("[Foxden] Assigned", assignedTabIds.size, "tabs to workspaces");
+
+        // Add any unassigned tabs to the active workspace
+        let unassignedCount = 0;
+        for (const tab of newTabs) {
+          if (!tab.pinned && !assignedTabIds.has(tab.id)) {
+            // This tab wasn't matched to any workspace - add to active workspace
             if (await Brainer.addTabToWorkspace(tab)) {
               await browser.tabs.show(tab.id);
+              unassignedCount++;
             }
           }
+        }
+        if (unassignedCount > 0) {
+          console.log("[Foxden] Added", unassignedCount, "unassigned tabs to active workspace");
         }
 
         // Properly restore workspace state - hide inactive workspace tabs
@@ -2131,7 +2302,7 @@ class Brainer {
         await Brainer.reconcileWorkspaces(window.id, { force: true }).catch(() => {});
         await Brainer.updateTabList();
         await Brainer.updateBadge();
-        initialized = true;
+        setInitialized(true);
       }
     }
 
@@ -2140,27 +2311,36 @@ class Brainer {
     });
 
     browser.runtime.onStartup.addListener(async () => {
+      console.log("[Foxden] runtime.onStartup fired - browser is starting");
       const windowsOnLoad = await browser.windows.getAll();
       if (windowsOnLoad.length === 1) {
-        await onWindowCreated(windowsOnLoad[0]);
+        await onWindowCreated(windowsOnLoad[0], true); // true = isBrowserStartup
       }
     });
 
     browser.windows.onRemoved.addListener(async (windowId) => {
+      console.log("[Foxden] Window removed:", windowId);
       const primaryWindowId = await WSPStorageManger.getPrimaryWindowId();
-      if (primaryWindowId !== windowId) {
+      console.log("[Foxden] primaryWindowId in storage:", primaryWindowId);
+
+      const remainingWindows = await browser.windows.getAll({ windowTypes: ["normal"] }).catch(() => []);
+      const isLastWindow = !Array.isArray(remainingWindows) || remainingWindows.length === 0;
+
+      console.log("[Foxden] Remaining windows:", remainingWindows.length, "isLastWindow:", isLastWindow);
+
+      // If this isn't the primary window AND there are other windows, just ignore
+      if (primaryWindowId !== windowId && !isLastWindow) {
+        console.log("[Foxden] Non-primary window closed, other windows remain - skipping");
         return;
       }
 
-      const remainingWindows = await browser.windows.getAll({ windowTypes: ["normal"] }).catch(() => []);
-
-      // If there are still windows open, promote one of them to primary so the extension remains usable.
-      if (Array.isArray(remainingWindows) && remainingWindows.length > 0) {
+      // If there are still windows open, promote one of them to primary
+      if (!isLastWindow) {
         const lastFocused = await browser.windows.getLastFocused({ windowTypes: ["normal"] }).catch(() => null);
         const newPrimaryId = lastFocused?.id || remainingWindows[0]?.id;
         if (newPrimaryId) {
-          await Brainer.rebindPrimaryWindow(windowId, newPrimaryId);
-          initialized = true;
+          await Brainer.rebindPrimaryWindow(primaryWindowId || windowId, newPrimaryId);
+          setInitialized(true);
           return;
         }
       }
@@ -2168,9 +2348,13 @@ class Brainer {
       // No other windows: treat as shutdown/restart and migrate on next window creation.
       // CRITICAL: Use immediate writes that bypass the queue to ensure data is persisted
       // before browser shuts down. The queued/delayed flush may not complete in time.
+      // Save the primaryWindowId (where workspaces are stored), not necessarily the closing window ID
+      const windowIdToSave = primaryWindowId || windowId;
+      console.log("[Foxden] Last window closing, saving primaryWindowLastId:", windowIdToSave);
       await WSPStorageManger.removePrimaryWindowIdImmediate();
-      await WSPStorageManger.setPrimaryWindowLastIdImmediate(windowId);
-      initialized = false;
+      await WSPStorageManger.setPrimaryWindowLastIdImmediate(windowIdToSave);
+      console.log("[Foxden] Shutdown data saved successfully");
+      setInitialized(false);
     });
 
     browser.windows.onFocusChanged.addListener(async (windowId) => {
@@ -2180,7 +2364,7 @@ class Brainer {
     });
 
 	    browser.tabs.onCreated.addListener(async (tab) => {
-	      if (!initialized) { // make sure to don't catch up tabs during startup
+	      if (!isInitialized()) { // make sure to don't catch up tabs during startup
 	        return;
 	      }
 	      await Brainer.updateTabList();

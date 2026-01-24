@@ -174,6 +174,9 @@ class WSPStorageManger {
       .map((t) => (typeof t === "string" ? t : String(t)).trim())
       .filter(t => t.length > 0);
 
+    // Normalize tabUrls - a map of tab ID to URL for matching after restart
+    const tabUrls = WSPStorageManger._asPlainObject(obj.tabUrls);
+
     return {
       id: Number.isFinite(Number(obj.id)) ? Number(obj.id) : Number(wspId),
       name: typeof obj.name === "string" && obj.name.trim().length > 0 ? obj.name : "Unnamed Workspace",
@@ -186,6 +189,7 @@ class WSPStorageManger {
       snoozedUntil,
       tags,
       tabs: normalizedTabs,
+      tabUrls,
       groups: normalizedGroups,
       windowId: Number.isFinite(windowId) ? windowId : null,
       lastActiveTabId: lastActiveTabId !== null ? lastActiveTabId : null

@@ -14,6 +14,7 @@ class Workspace {
     this.snoozedUntil = snoozedUntil != null && Number.isFinite(snoozedUntil) ? snoozedUntil : null;
     this.tags = Array.isArray(s.tags) ? s.tags : [];
     this.tabs = Array.isArray(s.tabs) ? s.tabs : [];
+    this.tabUrls = s.tabUrls && typeof s.tabUrls === "object" ? s.tabUrls : {};
     this.windowId = Number.isFinite(Number(s.windowId)) ? Number(s.windowId) : null;
     this.groups = Array.isArray(s.groups) ? s.groups : [];
     this.lastActiveTabId = s.lastActiveTabId ?? null;
@@ -197,6 +198,39 @@ class Workspace {
   }
 
   async _saveState() {
+    // Also save tab URLs for reliable matching after browser restart
+    // Tab IDs change on restart, but URLs remain the same
+    // Start with existing tabUrls (e.g., from Import) and update with current browser data
+    let tabUrls = { ...(this.tabUrls || {}) };
+    try {
+      if (this.tabs && this.tabs.length > 0) {
+        const tabInfos = await Promise.all(
+          this.tabs.map(async (tabId) => {
+            // If we already have a URL for this tab (e.g., from Import), use it
+            if (tabUrls[tabId]) {
+              return { id: tabId, url: tabUrls[tabId] };
+            }
+            // Otherwise, try to fetch from browser
+            try {
+              const tab = await browser.tabs.get(tabId);
+              return { id: tabId, url: tab.url };
+            } catch (e) {
+              return null;
+            }
+          })
+        );
+        // Rebuild tabUrls with only current tabs
+        tabUrls = {};
+        for (const info of tabInfos) {
+          if (info && info.url) {
+            tabUrls[info.id] = info.url;
+          }
+        }
+      }
+    } catch (e) {
+      // Best effort - continue without URLs if this fails
+    }
+
     await WSPStorageManger.saveWspState(this.id, {
       id: this.id,
       name: this.name,
@@ -209,6 +243,7 @@ class Workspace {
       snoozedUntil: this.snoozedUntil,
       tags: this.tags,
       tabs: this.tabs,
+      tabUrls: tabUrls,
       groups: this.groups,
       windowId: this.windowId,
       lastActiveTabId: this.lastActiveTabId

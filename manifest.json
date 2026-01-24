@@ -1,14 +1,14 @@
 {
   "manifest_version": 2,
   "name": "Foxden",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Foxden is a beautiful workspace manager for Firefox. Group tabs, switch contexts, search everything. Features templates, folders, drag-drop, suspend to free memory, and full keyboard navigation. No build tools required.",
   "icons": {
     "128": "assets/icons/128x128.png"
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "Foxden@VisorCraft",
+      "id": "foxden@extension",
       "strict_min_version": "147.0",
       "data_collection_permissions": {
         "required": [
