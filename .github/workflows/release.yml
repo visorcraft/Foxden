@@ -1,0 +1,89 @@
+# Tag-triggered release pipeline. Each push of a `v*` tag verifies
+# that the tag matches `version` in manifest.json, lints + builds the
+# extension into a version-named `.xpi`, generates sha256sums.txt,
+# and attaches everything to a new GitHub Release with auto-generated
+# notes. No `${{ github.event.* }}` interpolations are used: this
+# workflow is safe against injection from PR titles, branch names,
+# or commit messages.
+
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build + publish release
+    runs-on: ubuntu-latest
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install web-ext
+        run: npm install -g web-ext
+
+      - name: Resolve manifest version + verify tag
+        id: version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          workspace_version="$(python3 -c 'import json; print(json.load(open("manifest.json"))["version"])')"
+          tag_version="${TAG#v}"
+          if [[ -z "$workspace_version" ]]; then
+            echo "could not read version from manifest.json" >&2
+            exit 1
+          fi
+          if [[ "$tag_version" != "$workspace_version" ]]; then
+            echo "tag ${TAG} does not match manifest.json version ${workspace_version}" >&2
+            exit 1
+          fi
+          printf 'version=%s\n' "$workspace_version" >> "$GITHUB_OUTPUT"
+          echo "Building Foxden ${workspace_version} from tag ${TAG}"
+
+      - name: Validate manifest.json
+        run: python3 -m json.tool < manifest.json > /dev/null
+
+      - name: Lint extension with web-ext
+        run: web-ext lint --source-dir . --ignore-files "scripts/**" "tests/**" "assets/screenshots/**" "docs/**" "*.md" "*.xpi"
+
+      - name: Build release artifacts + checksums
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir -p dist
+          zip -r "dist/Foxden-${VERSION}.xpi" backend/ assets/icons/ popup/ manifest.json
+          (cd dist && sha256sum * > sha256sums.txt)
+          echo "Release payload:" && ls -la dist/
+          unzip -l "dist/Foxden-${VERSION}.xpi"
+
+      - name: Upload release artifacts (Actions backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ steps.version.outputs.version }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" dist/* \
+            --title "Foxden $TAG" \
+            --generate-notes \
+            --verify-tag
