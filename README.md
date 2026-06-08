@@ -1,10 +1,21 @@
-# Foxden
+<p align="center">
+  <img src="assets/Foxden.png" alt="Foxden - A cozy home for your Firefox tabs">
+</p>
 
-![Foxden - A cozy home for your Firefox tabs](assets/Foxden.png)
+<p align="center">
+  <b>Finally, a cozy den for all your tabs!</b>
+  <br />
+  Foxden is a workspace manager for Firefox that lets you organize your tabs into separate workspaces. Think of it like having multiple desks, each with its own set of papers — switch between them instantly without losing your place!
+  <br />
+  Firefox · workspace manager · MPL-2.0
+</p>
 
-**Finally, a cozy den for all your tabs!**
-
-Foxden is a workspace manager for Firefox that lets you organize your tabs into separate workspaces. Think of it like having multiple desks, each with its own set of papers — switch between them instantly without losing your place!
+<p align="center">
+  <img src="https://img.shields.io/badge/Firefox-Add--on-FF7139?logo=firefoxbrowser&logoColor=white" alt="Firefox Add-on" />
+  <img src="https://img.shields.io/badge/requires-Firefox%20147%2B-FF7139?logo=firefox&logoColor=white" alt="Requires Firefox 147+" />
+  <img src="https://img.shields.io/badge/Mozilla%20Add--ons-listed-000000?logo=firefoxbrowser&logoColor=white" alt="Mozilla Add-ons" />
+  <img src="https://img.shields.io/badge/license-MPL--2.0-blue" alt="License: MPL-2.0" />
+</p>
 
 ---
 
@@ -20,7 +31,7 @@ Ever find yourself drowning in 50+ tabs? We've been there. Foxden gives your tab
 
 ---
 
-## See It In Action
+## See it in action
 
 | ![Your workspaces, always at paw](assets/screenshots/screenshot1.png) | ![Make it yours](assets/screenshots/screenshot2.png) | ![Tweak to perfection](assets/screenshots/screenshot3.png) |
 |:---:|:---:|:---:|
@@ -32,13 +43,13 @@ Ever find yourself drowning in 50+ tabs? We've been there. Foxden gives your tab
 
 ---
 
-## Get Started
+## Get started
 
-### Install from Mozilla Add-ons (Recommended)
+### Install from Mozilla Add-ons (recommended)
 
 **[Get Foxden on Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/foxden/)** — One click, auto-updates, the works.
 
-### Manual Install
+### Manual install
 
 Prefer to live on the edge? Grab the latest from [GitHub Releases](https://github.com/visorcraft/Foxden/releases):
 
@@ -51,7 +62,7 @@ Prefer to live on the edge? Grab the latest from [GitHub Releases](https://githu
 
 ---
 
-## Handy Shortcuts
+## Handy shortcuts
 
 | Shortcut | What it does |
 |----------|-------------|
@@ -64,7 +75,7 @@ Prefer to live on the edge? Grab the latest from [GitHub Releases](https://githu
 
 ---
 
-## Learn More
+## Learn more
 
 Want the full scoop? Check out our docs:
 
@@ -84,8 +95,4 @@ Foxden is built on the shoulders of giants! Based on [fm-sys/firefox-workspaces]
 
 ## License
 
-Mozilla Public License Version 2.0 — see [LICENSE.txt](LICENSE.txt)
-
----
-
-*Happy tab wrangling!* 🦊
+Licensed under the **Mozilla Public License 2.0** (`MPL-2.0`) — see [`LICENSE.txt`](LICENSE.txt) for the full text. Foxden is a derivative work; see [Credits](#credits) for upstream attribution.
